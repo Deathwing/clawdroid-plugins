@@ -12,7 +12,7 @@
   "entrypoint": "index.js",
   "auth": {
     "type": "oauth2_device",
-    "client_id": "",
+    "client_id": "78a37094-cbd7-4467-91e8-18ee78294083",
     "device_code_url": "https://login.microsoftonline.com/common/oauth2/v2.0/devicecode",
     "poll_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
     "user_action_url": "https://microsoft.com/devicelogin",

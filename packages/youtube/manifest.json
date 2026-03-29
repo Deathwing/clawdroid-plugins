@@ -14,7 +14,7 @@
     "type": "oauth2",
     "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent",
     "token_url": "https://oauth2.googleapis.com/token",
-    "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    "client_id": "4564009598-up5m0pcseeo3o4b2nl3g88i94bv5cohm.apps.googleusercontent.com",
     "scopes": [
       "https://www.googleapis.com/auth/youtube"
     ],

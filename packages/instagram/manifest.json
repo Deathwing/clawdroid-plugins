@@ -14,7 +14,7 @@
     "type": "oauth2",
     "authorize_url": "https://www.instagram.com/oauth/authorize",
     "token_url": "https://api.instagram.com/oauth/access_token",
-    "client_id": "YOUR_META_APP_ID",
+    "client_id": "1849242555745526",
     "scopes": [
       "instagram_business_basic",
       "instagram_business_content_publish",
