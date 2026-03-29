@@ -1,0 +1,323 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "clawdroid_plugin": 1,
+  "type": "tool",
+  "id": "builtin:outlook",
+  "name": "Microsoft 365",
+  "description": "Outlook Mail, Calendar, and Teams tools via Microsoft Graph",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "productivity",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "oauth2_device",
+    "client_id": "",
+    "device_code_url": "https://login.microsoftonline.com/common/oauth2/v2.0/devicecode",
+    "poll_url": "https://login.microsoftonline.com/common/oauth2/v2.0/token",
+    "user_action_url": "https://microsoft.com/devicelogin",
+    "scopes": [
+      "Mail.ReadWrite",
+      "Mail.Send",
+      "Calendars.ReadWrite",
+      "Team.ReadBasic.All",
+      "Channel.ReadBasic.All",
+      "ChannelMessage.Send"
+    ],
+    "poll_interval_seconds": 5,
+    "refresh": true,
+    "account_label": "Microsoft",
+    "help_text": "Sign in with your Microsoft account to use Outlook Mail, Calendar, and Teams tools."
+  },
+  "tools": [
+    {
+      "name": "outlook_send_mail",
+      "description": "Send an email via Outlook.",
+      "parameters": [
+        {
+          "name": "to",
+          "type": "string",
+          "description": "Recipient email address"
+        },
+        {
+          "name": "subject",
+          "type": "string",
+          "description": "Email subject"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "description": "Email body (HTML or plain text)"
+        },
+        {
+          "name": "cc",
+          "type": "string",
+          "description": "CC addresses (comma-separated)",
+          "required": false
+        },
+        {
+          "name": "content_type",
+          "type": "string",
+          "description": "Body content type: 'Text' or 'HTML'. Default 'Text'.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "send_email",
+          "name": "Send an email",
+          "user_prompt": "Send an email to test@example.com with subject 'Hello' and body 'Just testing the email tool'",
+          "expected_tool_calls": {
+            "outlook_send_mail": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "outlook_list_mail",
+      "description": "List recent emails from Outlook inbox.",
+      "parameters": [
+        {
+          "name": "top",
+          "type": "integer",
+          "description": "Number of messages to return. Default 10.",
+          "required": false
+        },
+        {
+          "name": "filter",
+          "type": "string",
+          "description": "OData filter expression (e.g. \"isRead eq false\")",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_inbox",
+          "name": "List inbox messages",
+          "user_prompt": "Show me my latest emails",
+          "expected_tool_calls": {
+            "outlook_list_mail": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "outlook_read_mail",
+      "description": "Read a specific email by ID.",
+      "parameters": [
+        {
+          "name": "message_id",
+          "type": "string",
+          "description": "The Outlook message ID"
+        }
+      ]
+    },
+    {
+      "name": "outlook_search_mail",
+      "description": "Search emails in Outlook.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query string"
+        },
+        {
+          "name": "top",
+          "type": "integer",
+          "description": "Max results. Default 10.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "search_mail",
+          "name": "Search emails",
+          "user_prompt": "Search my emails for messages about 'quarterly report'",
+          "expected_tool_calls": {
+            "outlook_search_mail": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "outlook_list_events",
+      "description": "List upcoming Outlook calendar events.",
+      "parameters": [
+        {
+          "name": "top",
+          "type": "integer",
+          "description": "Max events. Default 10.",
+          "required": false
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "description": "Start time in ISO 8601 (e.g. 2024-01-01T00:00:00Z)",
+          "required": false
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "description": "End time in ISO 8601",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_events",
+          "name": "List calendar events",
+          "user_prompt": "Show me my upcoming calendar events",
+          "expected_tool_calls": {
+            "outlook_list_events": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "outlook_create_event",
+      "description": "Create a calendar event in Outlook.",
+      "parameters": [
+        {
+          "name": "subject",
+          "type": "string",
+          "description": "Event subject"
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "description": "Start time in ISO 8601 (e.g. 2024-01-15T10:00:00)"
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "description": "End time in ISO 8601"
+        },
+        {
+          "name": "time_zone",
+          "type": "string",
+          "description": "Time zone (e.g. 'America/New_York'). Default 'UTC'.",
+          "required": false
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "description": "Event body/description",
+          "required": false
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "description": "Event location",
+          "required": false
+        },
+        {
+          "name": "attendees",
+          "type": "string",
+          "description": "Comma-separated attendee email addresses",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "teams_list_teams",
+      "description": "List Microsoft Teams the user has joined.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "list_teams",
+          "name": "List Teams",
+          "user_prompt": "Show me all my Microsoft Teams",
+          "expected_tool_calls": {
+            "teams_list_teams": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "teams_list_channels",
+      "description": "List channels in a Teams team.",
+      "parameters": [
+        {
+          "name": "team_id",
+          "type": "string",
+          "description": "The team ID"
+        }
+      ]
+    },
+    {
+      "name": "teams_send_message",
+      "description": "Send a message to a Teams channel.",
+      "parameters": [
+        {
+          "name": "team_id",
+          "type": "string",
+          "description": "The team ID"
+        },
+        {
+          "name": "channel_id",
+          "type": "string",
+          "description": "The channel ID"
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "description": "Message content"
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_type": "outlook_mail_received",
+      "name": "Outlook Mail Received",
+      "description": "Trigger when a new email arrives in Outlook",
+      "icon_name": "email",
+      "poll_interval_seconds": 60,
+      "variables": [
+        "from",
+        "subject",
+        "preview",
+        "message_id",
+        "timestamp"
+      ],
+      "config_fields": [
+        {
+          "key": "from_filter",
+          "label": "From (optional)",
+          "type": "text",
+          "placeholder": "e.g. boss@company.com"
+        },
+        {
+          "key": "subject_filter",
+          "label": "Subject contains (optional)",
+          "type": "text",
+          "placeholder": "e.g. urgent"
+        }
+      ],
+      "prompt_placeholder": "e.g. New email from {{from}}: {{subject}}"
+    },
+    {
+      "trigger_type": "outlook_event_starting",
+      "name": "Outlook Event Starting",
+      "description": "Trigger before an Outlook calendar event starts",
+      "icon_name": "calendar_today",
+      "poll_interval_seconds": 60,
+      "variables": [
+        "event_title",
+        "start_time",
+        "end_time",
+        "location",
+        "event_id"
+      ],
+      "config_fields": [
+        {
+          "key": "minutes_before",
+          "label": "Minutes before event",
+          "type": "text",
+          "placeholder": "10"
+        }
+      ],
+      "prompt_placeholder": "e.g. Upcoming event: {{event_title}} at {{start_time}}"
+    }
+  ]
+}

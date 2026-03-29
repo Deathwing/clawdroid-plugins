@@ -1,0 +1,210 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:slack",
+  "name": "Slack",
+  "description": "Send messages, manage channels, and interact with Slack workspaces",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "messaging",
+  "clawdroid_plugin": 1,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "api_key",
+    "account_label": "Slack Bot",
+    "help_text": "Enter your Slack Bot User OAuth Token (starts with xoxb-). Create one at api.slack.com/apps."
+  },
+  "tools": [
+    {
+      "name": "slack_send_message",
+      "description": "Send a message to a Slack channel.",
+      "parameters": [
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Channel ID (e.g. C01234567)",
+          "required": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Message text",
+          "required": true
+        },
+        {
+          "name": "thread_ts",
+          "type": "string",
+          "description": "Thread timestamp to reply in a thread",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "send_message",
+          "name": "Send a Slack message",
+          "user_prompt": "Send the message 'Hello team!' to the #general Slack channel",
+          "expected_tool_calls": {
+            "slack_send_message": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "slack_list_channels",
+      "description": "List channels in the Slack workspace.",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Maximum channels to return. Default 100.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_channels",
+          "name": "List Slack channels",
+          "user_prompt": "Show me all the Slack channels I have access to",
+          "expected_tool_calls": {
+            "slack_list_channels": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "slack_read_channel",
+      "description": "Read recent messages from a Slack channel.",
+      "parameters": [
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Channel ID",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Number of messages. Default 20.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "slack_list_users",
+      "description": "List users in the Slack workspace.",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Maximum users to return.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "slack_get_user",
+      "description": "Get details about a Slack user.",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "string",
+          "description": "Slack user ID (e.g. U01234567)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "slack_search_messages",
+      "description": "Search messages in the Slack workspace.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Maximum results. Default 20.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "search_msgs",
+          "name": "Search Slack messages",
+          "user_prompt": "Search Slack for messages about 'deployment'",
+          "expected_tool_calls": {
+            "slack_search_messages": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "slack_add_reaction",
+      "description": "Add an emoji reaction to a message.",
+      "parameters": [
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Channel ID",
+          "required": true
+        },
+        {
+          "name": "timestamp",
+          "type": "string",
+          "description": "Message timestamp",
+          "required": true
+        },
+        {
+          "name": "emoji",
+          "type": "string",
+          "description": "Emoji name without colons (e.g. thumbsup)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "slack_auth_test",
+      "description": "Verify the Slack bot connection and get workspace info.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "check_auth",
+          "name": "Test Slack authentication",
+          "user_prompt": "Test if my Slack connection is working",
+          "expected_tool_calls": {
+            "slack_auth_test": 1
+          }
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_type": "slack_message",
+      "name": "Slack Message",
+      "description": "Trigger when a new message is posted in a channel",
+      "icon_name": "chat",
+      "poll_interval_seconds": 15,
+      "variables": [
+        "channel",
+        "user",
+        "text",
+        "ts"
+      ],
+      "config_fields": [
+        {
+          "key": "channel",
+          "label": "Channel ID",
+          "type": "text",
+          "placeholder": "e.g. C01234567",
+          "required": true
+        }
+      ],
+      "prompt_placeholder": "e.g. New message from {{user}}: {{text}}"
+    }
+  ]
+}

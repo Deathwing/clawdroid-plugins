@@ -1,0 +1,176 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:telegram",
+  "name": "Telegram",
+  "description": "Send messages, manage chats, and interact with Telegram bots",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "messaging",
+  "clawdroid_plugin": 1,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "api_key",
+    "account_label": "Telegram Bot",
+    "help_text": "Enter your bot token from @BotFather (format: 123456789:ABCdefGHI...)"
+  },
+  "tools": [
+    {
+      "name": "telegram_send_message",
+      "description": "Send a text message via Telegram bot.",
+      "parameters": [
+        {
+          "name": "chat_id",
+          "type": "string",
+          "description": "Chat ID to send the message to",
+          "required": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Message text",
+          "required": true
+        },
+        {
+          "name": "parse_mode",
+          "type": "string",
+          "description": "Parse mode: HTML, Markdown, or MarkdownV2",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "send_text",
+          "name": "Send a text message",
+          "user_prompt": "Send the message 'Hello from ClawDroid!' to Telegram chat ID 123456",
+          "expected_tool_calls": {
+            "telegram_send_message": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "telegram_get_me",
+      "description": "Get information about the bot.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "get_bot_info",
+          "name": "Get bot info",
+          "user_prompt": "Show me my Telegram bot profile information",
+          "expected_tool_calls": {
+            "telegram_get_me": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "telegram_get_chat",
+      "description": "Get information about a chat.",
+      "parameters": [
+        {
+          "name": "chat_id",
+          "type": "string",
+          "description": "Chat ID or @username",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "telegram_get_updates",
+      "description": "Get recent messages/updates received by the bot.",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Maximum number of updates. Default 10.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "check_updates",
+          "name": "Check for new messages",
+          "user_prompt": "Check for any new Telegram messages or updates",
+          "expected_tool_calls": {
+            "telegram_get_updates": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "telegram_forward_message",
+      "description": "Forward a message from one chat to another.",
+      "parameters": [
+        {
+          "name": "chat_id",
+          "type": "string",
+          "description": "Target chat ID",
+          "required": true
+        },
+        {
+          "name": "from_chat_id",
+          "type": "string",
+          "description": "Source chat ID",
+          "required": true
+        },
+        {
+          "name": "message_id",
+          "type": "string",
+          "description": "Message ID to forward",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "telegram_send_photo",
+      "description": "Send a photo via URL.",
+      "parameters": [
+        {
+          "name": "chat_id",
+          "type": "string",
+          "description": "Chat ID to send the photo to",
+          "required": true
+        },
+        {
+          "name": "photo_url",
+          "type": "string",
+          "description": "URL of the photo to send",
+          "required": true
+        },
+        {
+          "name": "caption",
+          "type": "string",
+          "description": "Photo caption",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_type": "telegram_message",
+      "name": "Telegram Message",
+      "description": "Trigger when a new message is received by the bot",
+      "icon_name": "chat",
+      "poll_interval_seconds": 15,
+      "variables": [
+        "chat_id",
+        "from_name",
+        "text",
+        "message_id",
+        "date"
+      ],
+      "config_fields": [
+        {
+          "key": "chat_id",
+          "label": "Chat ID (optional)",
+          "type": "text",
+          "placeholder": "e.g. -1001234567890"
+        }
+      ],
+      "prompt_placeholder": "e.g. New message from {{from_name}}: {{text}}"
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+# Copyright (c) 2026 Robert (Deathwing). All rights reserved.
+# Licensed under proprietary license. See LICENSE file in the project root.
+
+name: Build & Release Plugins
+
+on:
+  push:
+    tags:
+      - 'v[0-9]*'   # versioned stable releases only — 'latest' rolling release is handled by ci.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          for plugin in packages/*/; do
+            [ -f "${plugin}manifest.json" ] || continue
+            echo "Installing deps for ${plugin#packages/}"
+            npm install --prefix "$plugin"
+          done
+
+      - name: Build all plugins
+        run: |
+          for plugin in packages/*/; do
+            [ -f "${plugin}manifest.json" ] || continue
+            echo "Building ${plugin#packages/}"
+            mkdir -p "${plugin}dist"
+            npm run build:release --prefix "$plugin"
+          done
+
+      - name: Package artifacts
+        run: |
+          RELEASE_TAG="${GITHUB_REF_NAME:-dev}"
+          VERSION="${RELEASE_TAG#v}"
+          REPO="https://github.com/${{ github.repository }}"
+          BUNDLED=$(node -e "console.log(JSON.stringify(require('./builtin.json').bundled))")
+
+          mkdir -p release-artifacts
+
+          # Per-plugin zips + collect catalog entries
+          CATALOG_ENTRIES=""
+          for plugin in packages/*/; do
+            [ -f "${plugin}manifest.json" ] || continue
+            name="${plugin#packages/}"
+            name="${name%/}"
+
+            # Per-plugin zip
+            zip -j "release-artifacts/${name}.zip" \
+              "${plugin}dist/index.js" \
+              "${plugin}manifest.json"
+            sha256sum "release-artifacts/${name}.zip" > "release-artifacts/${name}.zip.sha256"
+
+            # Collect catalog entry from manifest
+            BUNDLE_URL="${REPO}/releases/download/${RELEASE_TAG}/${name}.zip"
+            ENTRY=$(node -e "
+              const fs = require('fs');
+              const m = JSON.parse(fs.readFileSync('${plugin}manifest.json', 'utf8'));
+              const bundled = ${BUNDLED};
+              const entry = {
+                id: m.id,
+                name: m.name,
+                description: m.description,
+                type: m.type,
+                version: m.version || '${VERSION}',
+                author: m.author || 'Robert (Deathwing)',
+                category: m.category || 'other',
+                bundled: bundled.includes('${name}'),
+                icon_url: m.icon_url || null,
+                manifest_url: 'https://raw.githubusercontent.com/\${{ github.repository }}/\${process.env.TAG || 'main'}/${plugin}manifest.json',
+                bundle_url: '${BUNDLE_URL}',
+              };
+              process.stdout.write(JSON.stringify(entry));
+            " TAG="$RELEASE_TAG")
+            if [ -n "$CATALOG_ENTRIES" ]; then
+              CATALOG_ENTRIES="${CATALOG_ENTRIES},${ENTRY}"
+            else
+              CATALOG_ENTRIES="$ENTRY"
+            fi
+          done
+
+          # Generate plugins.json catalog
+          node -e "
+            const fs = require('fs');
+            const entries = JSON.parse('[${CATALOG_ENTRIES}]');
+            entries.sort((a, b) => a.name.localeCompare(b.name));
+            const catalog = {
+              version: 2,
+              release: '${VERSION}',
+              generated_at: new Date().toISOString(),
+              plugins: entries,
+            };
+            fs.writeFileSync('release-artifacts/plugins.json', JSON.stringify(catalog, null, 2));
+            console.log('Generated plugins.json with', entries.length, 'plugins');
+          "
+
+          # Combined plugins.zip (all plugins, for Gradle download)
+          mkdir -p all-plugins
+          for plugin in packages/*/; do
+            [ -f "${plugin}manifest.json" ] || continue
+            name="${plugin#packages/}"
+            name="${name%/}"
+            mkdir -p "all-plugins/${name}"
+            cp "${plugin}dist/index.js" "all-plugins/${name}/index.js"
+            cp "${plugin}manifest.json" "all-plugins/${name}/manifest.json"
+          done
+          cd all-plugins && zip -r ../release-artifacts/plugins.zip . && cd ..
+          sha256sum release-artifacts/plugins.zip > release-artifacts/plugins.zip.sha256
+
+          echo "--- Release artifacts ---"
+          ls -lh release-artifacts/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-artifacts/*
+          generate_release_notes: true
+          body: |
+            ## Plugin Catalog
+
+            See [`plugins.json`](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/plugins.json) for the full catalog.
+
+            Built-in plugins (pre-shipped with ClawDroid) are defined in [`builtin.json`](builtin.json).
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

@@ -1,0 +1,659 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:spotify",
+  "name": "Spotify",
+  "description": "Control playback, search music, manage playlists and library via Spotify Web API",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "entertainment",
+  "clawdroid_plugin": 9,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "oauth2",
+    "authorize_url": "https://accounts.spotify.com/authorize?show_dialog=true",
+    "token_url": "https://accounts.spotify.com/api/token",
+    "client_id": "d57255b9ed2f4729a0a8f59f7a4b7854",
+    "scopes": [
+      "user-read-playback-state",
+      "user-modify-playback-state",
+      "user-read-currently-playing",
+      "playlist-read-private",
+      "playlist-read-collaborative",
+      "playlist-modify-public",
+      "playlist-modify-private",
+      "user-library-read",
+      "user-library-modify",
+      "user-read-recently-played",
+      "user-top-read",
+      "ugc-image-upload"
+    ],
+    "pkce": true,
+    "redirect_uri": "clawdroid://oauth/callback",
+    "refresh": true,
+    "account_label": "Spotify",
+    "help_text": "Sign in with your Spotify account. Requires a Spotify Developer App \u2014 set the redirect URI to clawdroid://oauth/callback in your app dashboard."
+  },
+  "tools": [
+    {
+      "name": "spotify_get_playback",
+      "description": "Get current playback state including track, device, volume, shuffle, and repeat status.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "now_playing",
+          "name": "Check current playback",
+          "user_prompt": "What song is currently playing on Spotify?",
+          "expected_tool_calls": {
+            "spotify_get_playback": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_play",
+      "description": "Start or resume playback. Optionally specify a Spotify URI to play a specific track, album, artist, or playlist.",
+      "parameters": [
+        {
+          "name": "uri",
+          "type": "string",
+          "description": "Spotify URI to play (e.g. spotify:track:xxx, spotify:album:xxx, spotify:playlist:xxx). Omit to resume current playback.",
+          "required": false
+        },
+        {
+          "name": "device_id",
+          "type": "string",
+          "description": "Target device ID. Omit to use the active device.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "play_music",
+          "name": "Start playback",
+          "user_prompt": "Play some music on Spotify",
+          "expected_tool_calls": {
+            "spotify_play": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_pause",
+      "description": "Pause playback on the active device.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "pause_music",
+          "name": "Pause playback",
+          "user_prompt": "Pause the music on Spotify",
+          "expected_tool_calls": {
+            "spotify_pause": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_next",
+      "description": "Skip to the next track.",
+      "parameters": []
+    },
+    {
+      "name": "spotify_previous",
+      "description": "Skip to the previous track.",
+      "parameters": []
+    },
+    {
+      "name": "spotify_set_volume",
+      "description": "Set the playback volume.",
+      "parameters": [
+        {
+          "name": "volume_percent",
+          "type": "integer",
+          "description": "Volume level from 0 to 100.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_set_shuffle",
+      "description": "Enable or disable shuffle mode.",
+      "parameters": [
+        {
+          "name": "state",
+          "type": "string",
+          "description": "'true' to enable shuffle, 'false' to disable.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_set_repeat",
+      "description": "Set the repeat mode.",
+      "parameters": [
+        {
+          "name": "state",
+          "type": "string",
+          "description": "Repeat mode: 'track', 'context', or 'off'.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_add_to_queue",
+      "description": "Add a track or episode to the playback queue.",
+      "parameters": [
+        {
+          "name": "uri",
+          "type": "string",
+          "description": "Spotify URI of the track or episode to queue.",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "queue_track",
+          "name": "Add to queue",
+          "user_prompt": "Add the song with URI spotify:track:6rqhFgbbKwnb9MLmUQDhG6 to my Spotify queue",
+          "expected_tool_calls": {
+            "spotify_add_to_queue": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_queue",
+      "description": "Get the current playback queue.",
+      "parameters": []
+    },
+    {
+      "name": "spotify_search",
+      "description": "Search Spotify for tracks, albums, artists, or playlists.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query.",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "description": "Comma-separated types: track, album, artist, playlist. Default 'track'.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max results per type. Default 10.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "search_track",
+          "name": "Search for a song",
+          "user_prompt": "Search Spotify for 'Bohemian Rhapsody' by Queen",
+          "expected_tool_calls": {
+            "spotify_search": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_list_playlists",
+      "description": "List the user's playlists.",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max playlists to return. Default 20.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_playlists",
+          "name": "List playlists",
+          "user_prompt": "Show me my Spotify playlists",
+          "expected_tool_calls": {
+            "spotify_list_playlists": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_playlist",
+      "description": "Get details and tracks of a specific playlist.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_create_playlist",
+      "description": "Create a new playlist for the current user.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Playlist name.",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "description": "Playlist description.",
+          "required": false
+        },
+        {
+          "name": "public",
+          "type": "string",
+          "description": "'true' for public, 'false' for private. Default 'false'.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "create_playlist",
+          "name": "Create a playlist",
+          "user_prompt": "Create a new Spotify playlist called 'Workout Mix'",
+          "expected_tool_calls": {
+            "spotify_create_playlist": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_add_to_playlist",
+      "description": "Add tracks to a playlist.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        },
+        {
+          "name": "uris",
+          "type": "string",
+          "description": "Comma-separated Spotify track URIs to add.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_remove_from_playlist",
+      "description": "Remove tracks from a playlist.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        },
+        {
+          "name": "uris",
+          "type": "string",
+          "description": "Comma-separated Spotify track URIs to remove.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_saved_tracks",
+      "description": "Get the user's saved (liked) tracks.",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max tracks to return. Default 20.",
+          "required": false
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "description": "Offset for pagination. Default 0.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "spotify_save_tracks",
+      "description": "Save (like) tracks to the user's library.",
+      "parameters": [
+        {
+          "name": "track_ids",
+          "type": "string",
+          "description": "Comma-separated Spotify track IDs to save.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_remove_saved_tracks",
+      "description": "Remove (unlike) tracks from the user's library.",
+      "parameters": [
+        {
+          "name": "track_ids",
+          "type": "string",
+          "description": "Comma-separated Spotify track IDs to remove.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_top_items",
+      "description": "Get the user's top artists or tracks based on listening history.",
+      "parameters": [
+        {
+          "name": "type",
+          "type": "string",
+          "description": "'artists' or 'tracks'. Default 'tracks'.",
+          "required": false
+        },
+        {
+          "name": "time_range",
+          "type": "string",
+          "description": "'short_term' (4 weeks), 'medium_term' (6 months), or 'long_term' (years). Default 'medium_term'.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max items to return. Default 20.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "top_tracks",
+          "name": "Get top tracks",
+          "user_prompt": "Show me my most listened to songs on Spotify",
+          "expected_tool_calls": {
+            "spotify_get_top_items": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_recently_played",
+      "description": "Get the user's recently played tracks.",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max tracks to return. Default 20.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "recent_plays",
+          "name": "Recently played",
+          "user_prompt": "What songs have I listened to recently on Spotify?",
+          "expected_tool_calls": {
+            "spotify_get_recently_played": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "spotify_update_playlist_details",
+      "description": "Change a playlist's name, description, or public/private state.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "New playlist name.",
+          "required": false
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "description": "New playlist description.",
+          "required": false
+        },
+        {
+          "name": "public",
+          "type": "string",
+          "description": "'true' for public, 'false' for private.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_playlist_items",
+      "description": "Get a playlist's tracks with pagination support.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max tracks to return (1-50). Default 50.",
+          "required": false
+        },
+        {
+          "name": "offset",
+          "type": "integer",
+          "description": "Offset for pagination. Default 0.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "spotify_reorder_playlist_items",
+      "description": "Reorder tracks within a playlist.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        },
+        {
+          "name": "range_start",
+          "type": "integer",
+          "description": "Position of the first track to move (0-based).",
+          "required": true
+        },
+        {
+          "name": "insert_before",
+          "type": "integer",
+          "description": "Position to insert before (0-based).",
+          "required": true
+        },
+        {
+          "name": "range_length",
+          "type": "integer",
+          "description": "Number of tracks to move. Default 1.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "spotify_replace_playlist_items",
+      "description": "Replace all tracks in a playlist with the given tracks.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        },
+        {
+          "name": "uris",
+          "type": "string",
+          "description": "Comma-separated Spotify track URIs.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_playlist_cover_image",
+      "description": "Get the cover image(s) of a playlist.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_set_playlist_cover_image",
+      "description": "Set a custom cover image for a playlist. Image must be base64-encoded JPEG, max 256KB.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The Spotify playlist ID.",
+          "required": true
+        },
+        {
+          "name": "image_base64",
+          "type": "string",
+          "description": "Base64-encoded JPEG image data (no data: prefix).",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_track",
+      "description": "Get details of a specific track.",
+      "parameters": [
+        {
+          "name": "track_id",
+          "type": "string",
+          "description": "The Spotify track ID.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_album",
+      "description": "Get details and track listing of an album.",
+      "parameters": [
+        {
+          "name": "album_id",
+          "type": "string",
+          "description": "The Spotify album ID.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_artist",
+      "description": "Get details of an artist.",
+      "parameters": [
+        {
+          "name": "artist_id",
+          "type": "string",
+          "description": "The Spotify artist ID.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_artist_top_tracks",
+      "description": "Get an artist's top tracks.",
+      "parameters": [
+        {
+          "name": "artist_id",
+          "type": "string",
+          "description": "The Spotify artist ID.",
+          "required": true
+        },
+        {
+          "name": "market",
+          "type": "string",
+          "description": "ISO 3166-1 alpha-2 country code. Default 'US'.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_artist_albums",
+      "description": "Get an artist's albums.",
+      "parameters": [
+        {
+          "name": "artist_id",
+          "type": "string",
+          "description": "The Spotify artist ID.",
+          "required": true
+        },
+        {
+          "name": "include_groups",
+          "type": "string",
+          "description": "Comma-separated: album, single, appears_on, compilation. Default 'album,single'.",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max albums to return. Default 20.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_related_artists",
+      "description": "Get artists related to a given artist.",
+      "parameters": [
+        {
+          "name": "artist_id",
+          "type": "string",
+          "description": "The Spotify artist ID.",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "spotify_get_recommendations",
+      "description": "Get track recommendations based on seed tracks, artists, or genres.",
+      "parameters": [
+        {
+          "name": "seed_tracks",
+          "type": "string",
+          "description": "Comma-separated track IDs (up to 5 total seeds).",
+          "required": false
+        },
+        {
+          "name": "seed_artists",
+          "type": "string",
+          "description": "Comma-separated artist IDs (up to 5 total seeds).",
+          "required": false
+        },
+        {
+          "name": "seed_genres",
+          "type": "string",
+          "description": "Comma-separated genre names (up to 5 total seeds).",
+          "required": false
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Max tracks to return. Default 20.",
+          "required": false
+        }
+      ]
+    }
+  ]
+}

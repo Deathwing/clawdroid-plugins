@@ -1,0 +1,17 @@
+{
+  "name": "@clawdroid/plugin-matrix",
+  "version": "1.0.0",
+  "description": "ClawDroid Matrix plugin — TypeScript source",
+  "author": "Robert (Deathwing) <deathwing_shadow@hotmail.de>",
+  "license": "MIT",
+  "scripts": {
+    "build:release": "esbuild src/index.ts --bundle --format=iife --global-name=__plugin --target=es2020 --outfile=./dist/index.js --footer:js=\"var discoverTools=__plugin.discoverTools;var execute=__plugin.execute;var checkTrigger=__plugin.checkTrigger;var matchEvent=__plugin.matchEvent;var formatLabel=__plugin.formatLabel;var buildConfig=__plugin.buildConfig;\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

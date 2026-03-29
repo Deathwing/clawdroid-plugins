@@ -1,0 +1,15 @@
+{
+  "name": "@clawdroid/plugins",
+  "version": "1.0.0",
+  "description": "ClawDroid community plugins — build root",
+  "author": "Robert (Deathwing) <deathwing_shadow@hotmail.de>",
+  "license": "MIT",
+  "scripts": {
+    "build:release": "npm run build:release --workspaces",
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

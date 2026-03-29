@@ -1,0 +1,151 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:matrix",
+  "name": "Matrix",
+  "description": "Send messages, join rooms, and interact with Matrix servers",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "messaging",
+  "clawdroid_plugin": 1,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "api_key",
+    "account_label": "Matrix",
+    "help_text": "Enter as: homeserver_url|access_token (e.g. https://matrix.org|syt_xxx). Get a token from Element > Settings > Help & About > Access Token."
+  },
+  "tools": [
+    {
+      "name": "matrix_send_message",
+      "description": "Send a text message to a Matrix room.",
+      "parameters": [
+        {
+          "name": "room_id",
+          "type": "string",
+          "description": "Room ID (e.g. !abc123:matrix.org)",
+          "required": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Message text",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "send_msg",
+          "name": "Send a Matrix message",
+          "user_prompt": "Send 'Hello!' to Matrix room !abc123:matrix.org",
+          "expected_tool_calls": {
+            "matrix_send_message": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "matrix_list_rooms",
+      "description": "List all joined Matrix rooms.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "list_rooms",
+          "name": "List Matrix rooms",
+          "user_prompt": "Show me all my Matrix rooms",
+          "expected_tool_calls": {
+            "matrix_list_rooms": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "matrix_read_room",
+      "description": "Read recent messages from a Matrix room.",
+      "parameters": [
+        {
+          "name": "room_id",
+          "type": "string",
+          "description": "Room ID",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Number of messages. Default 20.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "matrix_join_room",
+      "description": "Join a Matrix room by ID or alias.",
+      "parameters": [
+        {
+          "name": "room_id_or_alias",
+          "type": "string",
+          "description": "Room ID or alias (e.g. #room:matrix.org)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "matrix_get_room_info",
+      "description": "Get name and topic of a Matrix room.",
+      "parameters": [
+        {
+          "name": "room_id",
+          "type": "string",
+          "description": "Room ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "matrix_get_profile",
+      "description": "Get a Matrix user's profile (display name and avatar).",
+      "parameters": [
+        {
+          "name": "user_id",
+          "type": "string",
+          "description": "User ID (e.g. @user:matrix.org)",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_profile",
+          "name": "Get Matrix user profile",
+          "user_prompt": "Show me the Matrix profile for @user:matrix.org",
+          "expected_tool_calls": {
+            "matrix_get_profile": 1
+          }
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_type": "matrix_message",
+      "name": "Matrix Message",
+      "description": "Trigger when a new message is posted in a Matrix room",
+      "icon_name": "chat",
+      "poll_interval_seconds": 15,
+      "variables": [
+        "room_id",
+        "sender",
+        "body",
+        "event_id"
+      ],
+      "config_fields": [
+        {
+          "key": "room_id",
+          "label": "Room ID (optional)",
+          "type": "text",
+          "placeholder": "e.g. !abc123:matrix.org"
+        }
+      ],
+      "prompt_placeholder": "e.g. New message from {{sender}}: {{body}}"
+    }
+  ]
+}

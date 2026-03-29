@@ -1,0 +1,225 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Clawdroid Plugin Manifest",
+  "description": "Manifest schema for Clawdroid plugins. IMPORTANT: use 'clawdroid_plugin', NOT 'version'.",
+  "type": "object",
+  "required": ["id", "name", "description", "clawdroid_plugin", "type"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Unique plugin identifier, e.g. 'builtin:github' or 'community:myplugin'",
+      "pattern": "^[a-z0-9_-]+:[a-z0-9_-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "Human-readable plugin name"
+    },
+    "description": {
+      "type": "string",
+      "description": "Short description of what this plugin does"
+    },
+    "version": {
+      "type": "string",
+      "description": "Plugin version (semver), e.g. '1.0.0'"
+    },
+    "author": {
+      "type": "string",
+      "description": "Plugin author name or handle"
+    },
+    "category": {
+      "type": "string",
+      "description": "Plugin category for catalog browsing, e.g. 'messaging', 'developer', 'productivity', 'social', 'entertainment'"
+    },
+    "clawdroid_plugin": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Clawdroid plugin format version. Must be 1. Do NOT use a 'version' field instead."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["tool", "model", "trigger"],
+      "description": "Plugin type"
+    },
+    "runtime": {
+      "type": "string",
+      "enum": ["embedded_js"],
+      "description": "Runtime environment for the plugin"
+    },
+    "entrypoint": {
+      "type": "string",
+      "description": "Entry-point JS bundle filename",
+      "default": "index.js"
+    },
+    "auth": {
+      "type": "object",
+      "description": "Authentication configuration",
+      "required": ["type", "account_label"],
+      "properties": {
+        "account_label": {
+          "type": "string",
+          "description": "Label shown in the UI for the connected account"
+        },
+        "help_text": {
+          "type": "string",
+          "description": "User-facing setup instructions"
+        }
+      },
+      "oneOf": [
+        {
+          "title": "API Key auth",
+          "properties": {
+            "type": { "const": "api_key" },
+            "account_label": { "type": "string" },
+            "help_text": { "type": "string" }
+          },
+          "required": ["type"],
+          "additionalProperties": false
+        },
+        {
+          "title": "OAuth 2.0 (PKCE / redirect)",
+          "properties": {
+            "type": { "const": "oauth2" },
+            "authorize_url": { "type": "string", "format": "uri" },
+            "token_url": { "type": "string", "format": "uri" },
+            "client_id": { "type": "string" },
+            "client_secret": { "type": "string" },
+            "scopes": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "pkce": { "type": "boolean" },
+            "redirect_uri": { "type": "string" },
+            "refresh": { "type": "boolean" },
+            "account_label": { "type": "string" },
+            "help_text": { "type": "string" }
+          },
+          "required": ["type", "authorize_url", "token_url", "client_id", "scopes"],
+          "additionalProperties": false
+        },
+        {
+          "title": "OAuth 2.0 Device Flow",
+          "properties": {
+            "type": { "const": "oauth2_device" },
+            "client_id": { "type": "string" },
+            "device_code_url": { "type": "string", "format": "uri" },
+            "poll_url": { "type": "string", "format": "uri" },
+            "user_action_url": { "type": "string", "format": "uri" },
+            "scopes": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "poll_interval_seconds": { "type": "integer", "minimum": 1 },
+            "refresh": { "type": "boolean" },
+            "account_label": { "type": "string" },
+            "help_text": { "type": "string" }
+          },
+          "required": ["type", "client_id", "device_code_url", "poll_url", "user_action_url", "scopes"],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "tools": {
+      "type": "array",
+      "description": "Tool definitions exposed by this plugin",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "parameters"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Tool identifier, e.g. 'github_get_user'"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this tool does"
+          },
+          "parameters": {
+            "type": "array",
+            "description": "Tool input parameters",
+            "items": {
+              "type": "object",
+              "required": ["name", "type", "description"],
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["string", "integer", "number", "boolean", "array", "object"]
+                },
+                "description": { "type": "string" },
+                "required": { "type": "boolean" }
+              }
+            }
+          },
+          "test_cases": {
+            "type": "array",
+            "description": "Optional test cases for automated validation",
+            "items": {
+              "type": "object",
+              "required": ["id", "name", "user_prompt"],
+              "additionalProperties": true,
+              "properties": {
+                "id": { "type": "string" },
+                "name": { "type": "string" },
+                "user_prompt": { "type": "string" },
+                "expected_output_contains": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "expected_tool_calls": {
+                  "type": "object",
+                  "additionalProperties": { "type": "integer" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "triggers": {
+      "type": "array",
+      "description": "Trigger definitions for event-driven automation",
+      "items": {
+        "type": "object",
+        "required": ["trigger_type", "name", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "trigger_type": { "type": "string" },
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "icon_name": { "type": "string" },
+          "poll_interval_seconds": { "type": "integer", "minimum": 1 },
+          "variables": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "config_fields": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["key", "label", "type"],
+              "additionalProperties": false,
+              "properties": {
+                "key": { "type": "string" },
+                "label": { "type": "string" },
+                "type": {
+                  "type": "string",
+                  "enum": ["text", "number", "boolean", "select"]
+                },
+                "placeholder": { "type": "string" },
+                "required": { "type": "boolean" },
+                "options": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
+          },
+          "prompt_placeholder": { "type": "string" }
+        }
+      }
+    }
+  }
+}

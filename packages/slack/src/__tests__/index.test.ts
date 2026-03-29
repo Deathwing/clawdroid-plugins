@@ -1,0 +1,133 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+
+const mockFetch = vi.fn();
+const mockHost = { getSecret: vi.fn(), readFile: vi.fn(), writeFile: vi.fn(), listDirectory: vi.fn(), httpFetch: vi.fn(), log: vi.fn() };
+vi.stubGlobal("fetch", mockFetch);
+vi.stubGlobal("host", mockHost);
+vi.stubGlobal("console", { log: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() });
+
+import { discoverTools, execute, matchEvent, formatLabel, buildConfig } from "../index";
+
+function mockCtx(token: string | null = "xoxb-test123") {
+  return { host: { ...mockHost, getSecret: vi.fn().mockResolvedValue(token) } as any };
+}
+
+function jsonResp(data: unknown, status = 200) {
+  return { ok: status < 400, status, text: () => JSON.stringify(data), json: () => data };
+}
+
+beforeEach(() => vi.clearAllMocks());
+
+// ─── discoverTools ──────────────────────────────────────
+
+describe("discoverTools", () => {
+  it("returns empty array", () => {
+    expect(discoverTools()).toEqual([]);
+  });
+});
+
+// ─── execute ────────────────────────────────────────────
+
+describe("execute", () => {
+  it("returns error when no token", async () => {
+    const result = await execute("slack_list_channels", {}, mockCtx(null));
+    expect(result).toEqual({ error: true, message: "Slack not connected. Add your bot token in Settings first." });
+  });
+
+  it("returns error for unknown tool", async () => {
+    const result = await execute("slack_nonexistent", {}, mockCtx());
+    expect(result).toEqual({ error: true, message: "Unknown Slack tool: slack_nonexistent" });
+  });
+
+  it("dispatches slack_list_channels", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResp({ ok: true, channels: [{ id: "C1", name: "general", is_private: false, num_members: 10, topic: { value: "General" } }] }),
+    );
+    const result = await execute("slack_list_channels", { limit: 10 }, mockCtx());
+    expect((result as any).message).toContain("general");
+  });
+
+  it("dispatches slack_send_message", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResp({ ok: true, ts: "1234567890.123456" }),
+    );
+    const result = await execute("slack_send_message", { channel: "C1", text: "Hello" }, mockCtx());
+    expect((result as any).message).toContain("1234567890");
+  });
+
+  it("dispatches slack_read_channel", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResp({ ok: true, messages: [{ user: "U1", text: "Hi there", ts: "123.456" }] }),
+    );
+    const result = await execute("slack_read_channel", { channel: "C1", limit: 5 }, mockCtx());
+    expect((result as any).message).toContain("Hi there");
+  });
+
+  it("dispatches slack_list_users", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResp({ ok: true, members: [{ id: "U1", name: "bob", real_name: "Bob Smith", is_bot: false }] }),
+    );
+    const result = await execute("slack_list_users", { limit: 10 }, mockCtx());
+    expect((result as any).message).toContain("bob");
+  });
+
+  it("dispatches slack_get_user", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResp({ ok: true, user: { id: "U1", name: "alice", real_name: "Alice", profile: { email: "alice@test.com", title: "Dev" } } }),
+    );
+    const result = await execute("slack_get_user", { user_id: "U1" }, mockCtx());
+    expect((result as any).message).toContain("alice");
+  });
+
+  it("dispatches slack_auth_test", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResp({ ok: true, team: "TestTeam", user: "botuser", url: "https://testteam.slack.com" }),
+    );
+    const result = await execute("slack_auth_test", {}, mockCtx());
+    expect((result as any).message).toContain("TestTeam");
+  });
+
+  it("dispatches slack_add_reaction", async () => {
+    mockFetch.mockResolvedValue(jsonResp({ ok: true }));
+    const result = await execute("slack_add_reaction", { channel: "C1", timestamp: "123.456", emoji: "thumbsup" }, mockCtx());
+    expect((result as any).message).toBeDefined();
+  });
+});
+
+// ─── matchEvent ─────────────────────────────────────────
+
+describe("matchEvent", () => {
+  it("always returns event data", () => {
+    const event = { channel: "C1", user: "U1", text: "Hello", ts: "123" };
+    expect(matchEvent("slack_message", {}, event)).toEqual(event);
+  });
+
+  it("returns event even with config", () => {
+    const event = { channel: "C1", user: "U1", text: "Hello", ts: "123" };
+    expect(matchEvent("slack_message", { channel: "C1" }, event)).toEqual(event);
+  });
+});
+
+// ─── formatLabel ────────────────────────────────────────
+
+describe("formatLabel", () => {
+  it("formats with channel", () => {
+    expect(formatLabel("slack_message", { channel: "general" })).toBe("New message in #general");
+  });
+
+  it("formats without channel", () => {
+    expect(formatLabel("slack_message", {})).toBe("New Slack message");
+  });
+});
+
+// ─── buildConfig ────────────────────────────────────────
+
+describe("buildConfig", () => {
+  it("returns empty config when no input", () => {
+    expect(buildConfig("slack_message", {})).toEqual({});
+  });
+
+  it("includes channel when provided", () => {
+    expect(buildConfig("slack_message", { channel: "general" })).toEqual({ channel: "general" });
+  });
+});

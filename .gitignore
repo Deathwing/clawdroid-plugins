@@ -1,0 +1,10 @@
+packages/*/node_modules/
+packages/*/dist/
+*.log
+.DS_Store
+
+# Local dev secrets (OAuth tokens, PKCE state, etc.)
+packages/**/.last-token.txt
+packages/**/.pkce-state.json
+packages/**/.env
+packages/**/.env.local

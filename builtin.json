@@ -1,0 +1,12 @@
+{
+  "description": "Plugins listed here are pre-bundled with the ClawDroid app and available without download. All other plugins in the catalog require an explicit install.",
+  "bundled": [
+    "github",
+    "instagram",
+    "matrix",
+    "outlook",
+    "slack",
+    "spotify",
+    "telegram"
+  ]
+}

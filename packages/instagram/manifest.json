@@ -1,0 +1,179 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:instagram",
+  "name": "Instagram",
+  "description": "Post media, read feeds, and manage comments via Instagram Graph API",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "social",
+  "clawdroid_plugin": 1,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "oauth2",
+    "authorize_url": "https://www.instagram.com/oauth/authorize",
+    "token_url": "https://api.instagram.com/oauth/access_token",
+    "client_id": "YOUR_META_APP_ID",
+    "client_secret": "YOUR_META_APP_SECRET",
+    "scopes": [
+      "instagram_business_basic",
+      "instagram_business_content_publish",
+      "instagram_business_manage_comments"
+    ],
+    "redirect_uri": "clawdroid://oauth/callback",
+    "account_label": "Instagram",
+    "help_text": "Sign in with your Instagram Business or Creator account."
+  },
+  "tools": [
+    {
+      "name": "instagram_get_profile",
+      "description": "Get the authenticated Instagram Business/Creator account profile.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "get_profile",
+          "name": "Get Instagram profile",
+          "user_prompt": "Show me my Instagram profile information",
+          "expected_tool_calls": {
+            "instagram_get_profile": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "instagram_list_media",
+      "description": "List recent media posts from the account.",
+      "parameters": [
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Number of posts to return. Default 10.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_media",
+          "name": "List recent posts",
+          "user_prompt": "Show me my last 5 Instagram posts",
+          "expected_tool_calls": {
+            "instagram_list_media": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "instagram_get_media",
+      "description": "Get details of a specific media post.",
+      "parameters": [
+        {
+          "name": "media_id",
+          "type": "string",
+          "description": "The media ID",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "instagram_create_media",
+      "description": "Create a media container (photo or video) for publishing.",
+      "parameters": [
+        {
+          "name": "image_url",
+          "type": "string",
+          "description": "Public URL of the image (for photo posts)",
+          "required": false
+        },
+        {
+          "name": "video_url",
+          "type": "string",
+          "description": "Public URL of the video (for video/reel posts)",
+          "required": false
+        },
+        {
+          "name": "caption",
+          "type": "string",
+          "description": "Post caption",
+          "required": false
+        },
+        {
+          "name": "is_reel",
+          "type": "string",
+          "description": "Set to 'true' for Reels. Default false.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "instagram_publish_media",
+      "description": "Publish a previously created media container.",
+      "parameters": [
+        {
+          "name": "creation_id",
+          "type": "string",
+          "description": "The container ID from instagram_create_media",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "instagram_list_comments",
+      "description": "List comments on a media post.",
+      "parameters": [
+        {
+          "name": "media_id",
+          "type": "string",
+          "description": "The media ID",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Number of comments to return. Default 20.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "instagram_reply_comment",
+      "description": "Reply to a comment on a media post.",
+      "parameters": [
+        {
+          "name": "comment_id",
+          "type": "string",
+          "description": "The comment ID to reply to",
+          "required": true
+        },
+        {
+          "name": "message",
+          "type": "string",
+          "description": "Reply text",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "instagram_get_insights",
+      "description": "Get insights/analytics for a media post.",
+      "parameters": [
+        {
+          "name": "media_id",
+          "type": "string",
+          "description": "The media ID",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_insights",
+          "name": "Get post insights",
+          "user_prompt": "Show me the engagement insights for my Instagram post with ID 12345",
+          "expected_tool_calls": {
+            "instagram_get_insights": 1
+          }
+        }
+      ]
+    }
+  ]
+}

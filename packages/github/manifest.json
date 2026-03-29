@@ -1,0 +1,497 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:github",
+  "name": "GitHub",
+  "description": "Interact with GitHub repos, issues, PRs, and more",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "developer",
+  "clawdroid_plugin": 2,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "oauth2_device",
+    "client_id": "Ov23linxWP74IZWM2WdM",
+    "scopes": [
+      "repo",
+      "delete_repo"
+    ],
+    "device_code_url": "https://github.com/login/device/code",
+    "poll_url": "https://github.com/login/oauth/access_token",
+    "user_action_url": "https://github.com/login/device",
+    "poll_interval_seconds": 5,
+    "account_label": "GitHub",
+    "help_text": "Sign in with GitHub to use repository, issue, and pull request tools."
+  },
+  "tools": [
+    {
+      "name": "github_get_user",
+      "description": "Get the authenticated GitHub user's profile.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "get_my_profile",
+          "name": "Fetch authenticated user profile",
+          "user_prompt": "Who am I on GitHub? Show me my username and profile info.",
+          "expected_output_contains": [
+            "github"
+          ],
+          "expected_tool_calls": {
+            "github_get_user": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "github_list_repos",
+      "description": "List the user's GitHub repositories.",
+      "parameters": [
+        {
+          "name": "per_page",
+          "type": "integer",
+          "description": "Results per page. Default 30.",
+          "required": false
+        },
+        {
+          "name": "sort",
+          "type": "string",
+          "description": "Sort by: created, updated, pushed, full_name. Default 'updated'.",
+          "required": false
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "description": "Type: all, owner, public, private, member. Default 'all'.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_my_repos",
+          "name": "List my repositories",
+          "user_prompt": "List my GitHub repositories, show me up to 5.",
+          "expected_tool_calls": {
+            "github_list_repos": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "github_get_repo",
+      "description": "Get details about a specific repository.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_repo_details",
+          "name": "Get repository details",
+          "user_prompt": "Get details about the repository octocat/Hello-World on GitHub",
+          "expected_tool_calls": {
+            "github_get_repo": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "github_list_issues",
+      "description": "List issues in a repository.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "description": "State: open, closed, all. Default 'open'.",
+          "required": false
+        },
+        {
+          "name": "per_page",
+          "type": "integer",
+          "description": "Results per page. Default 20.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_repo_issues",
+          "name": "List repository issues",
+          "user_prompt": "List the open issues on the octocat/Hello-World repository",
+          "expected_tool_calls": {
+            "github_list_issues": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "github_get_issue",
+      "description": "Get details of a specific issue.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "number",
+          "type": "string",
+          "description": "Issue number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "github_create_issue",
+      "description": "Create a new issue in a repository.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "title",
+          "type": "string",
+          "description": "Issue title",
+          "required": true
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "description": "Issue body/description.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "github_list_pull_requests",
+      "description": "List pull requests in a repository.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "state",
+          "type": "string",
+          "description": "State: open, closed, all. Default 'open'.",
+          "required": false
+        },
+        {
+          "name": "per_page",
+          "type": "integer",
+          "description": "Results per page. Default 20.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "github_get_pull_request",
+      "description": "Get details of a specific pull request.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "number",
+          "type": "string",
+          "description": "Pull request number",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "github_list_branches",
+      "description": "List branches in a repository.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "per_page",
+          "type": "integer",
+          "description": "Results per page. Default 30.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_branches",
+          "name": "List repository branches",
+          "user_prompt": "List all branches of the octocat/Hello-World repository",
+          "expected_tool_calls": {
+            "github_list_branches": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "github_get_file_contents",
+      "description": "Get the contents of a file from a repository.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "description": "File path in the repository",
+          "required": true
+        },
+        {
+          "name": "ref",
+          "type": "string",
+          "description": "Branch or commit SHA. Default: default branch.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "read_file",
+          "name": "Read a file from a repository",
+          "user_prompt": "Show me the contents of the README.md file from the octocat/Hello-World repository",
+          "expected_tool_calls": {
+            "github_get_file_contents": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "github_search_repos",
+      "description": "Search GitHub repositories.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query",
+          "required": true
+        },
+        {
+          "name": "per_page",
+          "type": "integer",
+          "description": "Results per page. Default 10.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "search_repos",
+          "name": "Search for repositories",
+          "user_prompt": "Search GitHub for Kotlin Multiplatform repositories",
+          "expected_tool_calls": {
+            "github_search_repos": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "github_search_code",
+      "description": "Search code across GitHub repositories.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search query",
+          "required": true
+        },
+        {
+          "name": "per_page",
+          "type": "integer",
+          "description": "Results per page. Default 10.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "github_create_repo",
+      "description": "Create a new GitHub repository for the authenticated user.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "description": "Repository description",
+          "required": false
+        },
+        {
+          "name": "private",
+          "type": "string",
+          "description": "Set to 'true' for a private repo. Default: public.",
+          "required": false
+        },
+        {
+          "name": "auto_init",
+          "type": "string",
+          "description": "Set to 'true' to initialize with README. Default: true.",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "github_delete_repo",
+      "description": "Delete a GitHub repository. Requires the token to have delete_repo scope.",
+      "parameters": [
+        {
+          "name": "owner",
+          "type": "string",
+          "description": "Repository owner",
+          "required": true
+        },
+        {
+          "name": "repo",
+          "type": "string",
+          "description": "Repository name",
+          "required": true
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_type": "github_notification",
+      "name": "GitHub Notification",
+      "description": "Trigger on a new GitHub notification",
+      "icon_name": "notifications",
+      "poll_interval_seconds": 60,
+      "variables": [
+        "title",
+        "reason",
+        "repo",
+        "type",
+        "url",
+        "timestamp"
+      ],
+      "config_fields": [
+        {
+          "key": "repo_filter",
+          "label": "Repository (optional)",
+          "type": "text",
+          "placeholder": "e.g. octocat/Hello-World"
+        }
+      ],
+      "prompt_placeholder": "e.g. New notification: {{title}} in {{repo}} ({{reason}})"
+    },
+    {
+      "trigger_type": "github_issue_opened",
+      "name": "GitHub Issue Opened",
+      "description": "Trigger when a new issue is opened on a repo",
+      "icon_name": "bug_report",
+      "poll_interval_seconds": 60,
+      "variables": [
+        "number",
+        "title",
+        "repo",
+        "url",
+        "timestamp"
+      ],
+      "config_fields": [
+        {
+          "key": "repo_filter",
+          "label": "Repository (optional)",
+          "type": "text",
+          "placeholder": "e.g. octocat/Hello-World"
+        }
+      ],
+      "prompt_placeholder": "e.g. New issue #{{number}}: {{title}} in {{repo}}"
+    },
+    {
+      "trigger_type": "github_pr_opened",
+      "name": "GitHub PR Opened",
+      "description": "Trigger when a new pull request is opened on a repo",
+      "icon_name": "merge",
+      "poll_interval_seconds": 60,
+      "variables": [
+        "number",
+        "title",
+        "repo",
+        "url",
+        "timestamp"
+      ],
+      "config_fields": [
+        {
+          "key": "repo_filter",
+          "label": "Repository (optional)",
+          "type": "text",
+          "placeholder": "e.g. octocat/Hello-World"
+        }
+      ],
+      "prompt_placeholder": "e.g. New PR #{{number}}: {{title}} in {{repo}}"
+    }
+  ]
+}
