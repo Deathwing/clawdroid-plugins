@@ -1,6 +1,6 @@
 # ClawDroid Community
 
-Community content library for [ClawDroid](https://clawdroid.dev) — the autonomous AI agent workstation for Android.
+Community content library for [ClawDroid](https://github.com/Deathwing/clawdroid) — the autonomous AI agent workstation for Android.
 
 This repo contains three types of community contributions:
 
