@@ -1,12 +1,12 @@
+dist/
 node_modules/
-packages/*/node_modules/
-packages/*/dist/
 package-lock.json
-*.log
+
 .DS_Store
 
 # Local dev secrets (OAuth tokens, PKCE state, etc.)
-packages/**/.last-token.txt
-packages/**/.pkce-state.json
-packages/**/.env
-packages/**/.env.local
+.last-token.txt
+.pkce-state.json
+.env
+.env.local
+.log

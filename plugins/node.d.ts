@@ -2,25 +2,24 @@
 // Licensed under proprietary license. See LICENSE file in the project root.
 
 /**
- * ClawDroid Node.js automation script type declarations.
+ * ClawDroid Node.js runtime type declarations.
  *
- * Include this file in your automation script project's tsconfig.json:
+ * Include this file in your Node.js plugin or script project's tsconfig.json:
  *
- *   "include": ["path/to/automation.d.ts", "your-script.ts"]
+ *   "include": ["path/to/node.d.ts", "your-script.ts"]
  *
- * Automation scripts are `.js` files referenced by `AutomationEntity.scriptPath`
- * (a workspace-relative path). They run inside the embedded Node.js bridge
- * (bridge.js / NodeEngine). Before your script is eval'd, bridge.js injects
- * `global.clawdroid` with the API below.
+ * The embedded Node.js runtime (NodeEngine / bridge.js) is used for:
+ *   - Script automations (.js files referenced by `AutomationEntity.scriptPath`)
+ *   - Node-stdio MCP server transports
+ *   - Direct node_eval / node_run tool invocations
  *
- * IMPORTANT: Actions do NOT execute synchronously. They are accumulated into an
- * internal list and dispatched by AutomationManager after your script completes.
+ * For script automations, bridge.js injects `global.clawdroid` and
+ * `global.__vars` before your script is eval'd. Actions posted to
+ * `global.clawdroid` are accumulated and dispatched by AutomationManager
+ * after the script completes — they do NOT execute synchronously.
  *
  * You have access to the full Node.js standard library and any npm packages
  * installed in the workspace via `npm install`.
- *
- * Trigger variables (e.g. SMS sender, notification text) are available on
- * `global.__vars` and typed according to which trigger fired the automation.
  */
 
 /** Available in Node.js automation scripts as `global.clawdroid`. */

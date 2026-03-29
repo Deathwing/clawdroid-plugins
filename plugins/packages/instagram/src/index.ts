@@ -8,7 +8,7 @@
  * Tools are declared in manifest.json, so discoverTools() returns [].
  */
 
-import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../quickjs.d";
 import { getProfile } from "./tools/profile";
 import { listMedia, getMedia, createMedia, publishMedia } from "./tools/media";
 import { listComments, replyComment } from "./tools/comments";

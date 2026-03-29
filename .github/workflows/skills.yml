@@ -1,25 +1,23 @@
 # Copyright (c) 2026 Robert (Deathwing). All rights reserved.
 # Licensed under proprietary license. See LICENSE file in the project root.
 
-name: Community Catalog CI
+name: Skills CI
 
 on:
   push:
     branches: [main]
     paths:
       - 'skills/**'
-      - 'mcps/**'
   pull_request:
     branches: [main]
     paths:
       - 'skills/**'
-      - 'mcps/**'
 
 permissions:
   contents: write
 
 jobs:
-  publish-catalog:
+  publish-skills:
     runs-on: ubuntu-latest
 
     steps:
@@ -28,18 +26,6 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '20'
-
-      - name: Validate MCP catalog JSON
-        run: |
-          node -e "
-            const fs = require('fs');
-            const catalog = JSON.parse(fs.readFileSync('mcps/catalog.json', 'utf8'));
-            if (!Array.isArray(catalog.mcps)) throw new Error('mcps must be an array');
-            for (const m of catalog.mcps) {
-              if (!m.id || !m.name || !m.command) throw new Error('MCP missing required field: ' + JSON.stringify(m));
-            }
-            console.log('MCP catalog valid:', catalog.mcps.length, 'entries');
-          "
 
       - name: Generate skills.json from markdown frontmatter
         run: |
@@ -90,20 +76,15 @@ jobs:
         env:
           GITHUB_SHA: ${{ github.sha }}
 
-      - name: Copy MCP catalog to artifacts
-        run: |
-          cp mcps/catalog.json release-artifacts/mcps.json
-          ls -lh release-artifacts/
-
       # ── Only publish on push to main ─────────────────────────────────────────
-      - name: Publish rolling 'latest' catalog release
+      - name: Publish rolling 'latest' release
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
           name: "Latest (rolling)"
           prerelease: true
-          files: release-artifacts/*
+          files: release-artifacts/skills.json
           body: |
             Auto-updated catalog reflecting the current state of `main`.
 

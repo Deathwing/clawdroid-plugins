@@ -12,7 +12,7 @@
  * - buildConfig() — build trigger config from input
  */
 
-import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../quickjs.d";
 import { slackGet } from "./api";
 import { listChannels, readChannel, readChannelRaw, getChannelInfo } from "./tools/channels";
 import { sendMessage, searchMessages, addReaction } from "./tools/messages";

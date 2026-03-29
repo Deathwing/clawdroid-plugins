@@ -12,7 +12,7 @@
  * - buildConfig() — build trigger config from input
  */
 
-import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../quickjs.d";
 import { getUser } from "./tools/user";
 import { listRepos, getRepo, searchRepos, createRepo, deleteRepo } from "./tools/repos";
 import { listIssues, getIssue, createIssue } from "./tools/issues";

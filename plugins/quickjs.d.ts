@@ -6,7 +6,7 @@
  *
  * Include this file in your plugin's tsconfig.json:
  *
- *   "include": ["../../plugin.d.ts", "src/**\/*.ts"]
+ *   "include": ["../../quickjs.d.ts", "src/**\/*.ts"]
  *
  * These globals are injected by JsPluginGlobals.kt before your plugin code runs
  * inside the QuickJS sandbox (JsPluginEngine).

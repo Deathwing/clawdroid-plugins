@@ -12,7 +12,7 @@
     "isolatedModules": true
   },
   "include": [
-    "../../clawdroid.d.ts",
+    "../../quickjs.d.ts",
     "src/**/*.ts"
   ],
   "exclude": [

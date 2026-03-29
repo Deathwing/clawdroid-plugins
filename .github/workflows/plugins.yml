@@ -1,13 +1,17 @@
 # Copyright (c) 2026 Robert (Deathwing). All rights reserved.
 # Licensed under proprietary license. See LICENSE file in the project root.
 
-name: CI
+name: Plugins CI
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'plugins/**'
   pull_request:
     branches: [main]
+    paths:
+      - 'plugins/**'
 
 permissions:
   contents: write
@@ -37,7 +41,7 @@ jobs:
           fi
 
           # If root SDK files changed, rebuild everything
-          ROOT_CHANGED=$(git diff --name-only "$BASE" HEAD -- plugins/clawdroid.d.ts plugins/manifest.schema.json plugins/builtin.json 2>/dev/null | head -1)
+          ROOT_CHANGED=$(git diff --name-only "$BASE" HEAD -- plugins/node.d.ts plugins/quickjs.d.ts plugins/manifest.schema.json plugins/builtin.json 2>/dev/null | head -1)
           if [ -n "$ROOT_CHANGED" ]; then
             CHANGED_PLUGINS=$(ls plugins/packages/ | tr '\n' ' ')
             echo "Root SDK files changed — rebuilding all plugins"
@@ -89,6 +93,7 @@ jobs:
 
       # ── Only run on push to main (not PRs) ───────────────────────────────────
       - name: Build changed plugins
+        id: build
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           CHANGED="${{ steps.changed.outputs.changed_plugins }}"
@@ -104,10 +109,10 @@ jobs:
             mkdir -p "${plugin}dist"
             npm run build:release --prefix "$plugin"
           done
-          echo "built_plugins=$CHANGED" >> $GITHUB_ENV
+          echo "built_plugins=$CHANGED" >> $GITHUB_OUTPUT
 
       - name: Package and publish rolling 'latest' release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.built_plugins != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build.outputs.built_plugins != ''
         run: |
           REPO="https://github.com/${{ github.repository }}"
           BUNDLED=$(node -e "console.log(JSON.stringify(require('./plugins/builtin.json').bundled))")
@@ -180,7 +185,7 @@ jobs:
           ls -lh release-artifacts/
 
       - name: Publish rolling 'latest' release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.built_plugins != ''
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.build.outputs.built_plugins != ''
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
@@ -190,7 +195,7 @@ jobs:
           body: |
             This is an automatically updated rolling release reflecting the current state of `main`.
 
-            **Updated plugins:** ${{ env.built_plugins }}
+            **Updated plugins:** ${{ steps.build.outputs.built_plugins }}
             **Commit:** ${{ github.sha }}
 
             For a pinned stable version, use a [versioned release](../../releases).

@@ -1,0 +1,61 @@
+# Copyright (c) 2026 Robert (Deathwing). All rights reserved.
+# Licensed under proprietary license. See LICENSE file in the project root.
+
+name: MCPs CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'mcps/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'mcps/**'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-mcps:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Validate MCP catalog JSON
+        run: |
+          node -e "
+            const fs = require('fs');
+            const catalog = JSON.parse(fs.readFileSync('mcps/catalog.json', 'utf8'));
+            if (!Array.isArray(catalog.mcps)) throw new Error('mcps must be an array');
+            for (const m of catalog.mcps) {
+              if (!m.id || !m.name || !m.command) throw new Error('MCP missing required field: ' + JSON.stringify(m));
+            }
+            console.log('MCP catalog valid:', catalog.mcps.length, 'entries');
+          "
+
+      - name: Copy MCP catalog to artifacts
+        run: |
+          mkdir -p release-artifacts
+          cp mcps/catalog.json release-artifacts/mcps.json
+
+      # ── Only publish on push to main ─────────────────────────────────────────
+      - name: Publish rolling 'latest' release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest (rolling)"
+          prerelease: true
+          files: release-artifacts/mcps.json
+          body: |
+            Auto-updated catalog reflecting the current state of `main`.
+
+            **Commit:** ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

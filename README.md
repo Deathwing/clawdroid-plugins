@@ -13,7 +13,8 @@ This repo contains three types of community contributions:
 ```
 clawdroid-community/
 ├── plugins/                      ← JS/TS plugin packages
-│   ├── clawdroid.d.ts            ← shared TypeScript type definitions
+│   ├── quickjs.d.ts              ← types for QuickJS plugin runtime (host, fetch, tool types)
+│   ├── node.d.ts                 ← types for embedded Node.js runtime (global.clawdroid, __vars)
 │   ├── manifest.schema.json      ← JSON Schema for manifest.json
 │   ├── builtin.json              ← which plugins are pre-bundled with the app
 │   └── packages/                 ← one directory per plugin
@@ -27,8 +28,9 @@ clawdroid-community/
 ├── mcps/                         ← MCP server catalog
 │   └── catalog.json
 └── .github/workflows/
-    ├── ci.yml                    ← plugin build, typecheck, release
-    └── community.yml             ← skills/mcps validation and catalog generation
+    ├── plugins.yml               ← plugin build, typecheck, and catalog release
+    ├── skills.yml                ← skill validation and catalog generation
+    └── mcps.yml                  ← MCP catalog validation and release
 ```
 
 ---
@@ -76,7 +78,7 @@ export function formatLabel(triggerType: string, config: PluginConfig): string
 export function buildConfig(triggerType: string): ConfigField[]
 ```
 
-See [`plugins/clawdroid.d.ts`](plugins/clawdroid.d.ts) for full type definitions.
+See [`plugins/quickjs.d.ts`](plugins/quickjs.d.ts) for full QuickJS plugin type definitions, and [`plugins/node.d.ts`](plugins/node.d.ts) for the embedded Node.js runtime types (`global.clawdroid`, `__vars`).
 
 ---
 
@@ -149,19 +151,21 @@ Add an entry to `mcps/catalog.json` following the existing format:
 
 Publishing is fully automatic.
 
-| Event | What happens |
-|-------|-------------|
-| PR opened | CI typechecks and tests changed plugins; validates skill/MCP files |
-| PR merged to `main` | CI builds changed plugins and regenerates catalogs; publishes everything to the [rolling `latest` release](../../releases/tag/latest) — immediately available in the app |
-| `v*` tag pushed (maintainer) | CI builds all plugins and publishes a pinned stable release |
+| Event | Workflow | What happens |
+|-------|----------|--------------|
+| PR opened / push to `main` on `plugins/**` | `plugins.yml` | Typechecks and tests changed plugins; on merge builds and publishes `plugins.json` + per-plugin zips + `plugins.zip` to the [rolling `latest` release](../../releases/tag/latest) |
+| PR opened / push to `main` on `skills/**` | `skills.yml` | Validates YAML frontmatter; on merge regenerates `skills.json` and publishes to the [rolling `latest` release](../../releases/tag/latest) |
+| PR opened / push to `main` on `mcps/**` | `mcps.yml` | Validates `catalog.json`; on merge publishes `mcps.json` to the [rolling `latest` release](../../releases/tag/latest) |
 
 
-**For contributors:** open a PR, get it reviewed and merged — your plugin is live. That's it.
+**For contributors:** open a PR, get it reviewed and merged — your content is live. That's it.
 
 The [rolling `latest` release](../../releases/tag/latest) always reflects the current state of `main` and includes:
+- `plugins.json` — full plugin catalog consumed by the app
 - Per-plugin zips (`github.zip`, `telegram.zip`, etc.) + SHA-256 checksums
 - `plugins.zip` — combined zip used by the ClawDroid Android build system
-- `plugins.json` — the full plugin catalog consumed by the app
+- `skills.json` — full skill catalog consumed by the app
+- `mcps.json` — full MCP catalog consumed by the app
 
 ## License
 

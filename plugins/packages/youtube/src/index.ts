@@ -8,7 +8,7 @@
  * - discoverTools() + execute() — tool execution
  */
 
-import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../quickjs.d";
 import { search } from "./tools/search";
 import { getVideo, rateVideo } from "./tools/videos";
 import { listMyPlaylists, getPlaylistItems, addToPlaylist, createPlaylist, removeFromPlaylist } from "./tools/playlists";
