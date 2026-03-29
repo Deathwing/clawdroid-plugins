@@ -31,6 +31,15 @@
       "type": "string",
       "description": "Plugin category for catalog browsing, e.g. 'messaging', 'developer', 'productivity', 'social', 'entertainment'"
     },
+    "icon_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "URL to a square plugin icon (PNG/WebP, min 64x64). Displayed in the plugin catalog."
+    },
+    "featured": {
+      "type": "boolean",
+      "description": "Whether this plugin is featured in the catalog. Pre-bundled plugins are featured by default."
+    },
     "clawdroid_plugin": {
       "type": "integer",
       "minimum": 1,

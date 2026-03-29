@@ -147,6 +147,7 @@ jobs:
                 author: m.author || 'Robert (Deathwing)',
                 category: m.category || 'other',
                 bundled: bundled.includes(name),
+                featured: m.featured ?? bundled.includes(name),
                 icon_url: m.icon_url || null,
                 manifest_url: \`https://raw.githubusercontent.com/\${{ github.repository }}/main/packages/\${name}/manifest.json\`,
                 bundle_url: \`${REPO}/releases/download/latest/\${name}.zip\`,
