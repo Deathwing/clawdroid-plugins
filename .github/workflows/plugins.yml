@@ -60,7 +60,7 @@ jobs:
         run: |
           for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            npm install --prefix "$plugin" --silent
+            npm ci --prefix "$plugin" --silent
           done
 
       - name: Typecheck
