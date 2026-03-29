@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/*/package-lock.json'
+          cache-dependency-path: 'plugins/packages/*/package-lock.json'
 
       - name: Detect changed plugins
         id: changed
@@ -37,14 +37,14 @@ jobs:
           fi
 
           # If root SDK files changed, rebuild everything
-          ROOT_CHANGED=$(git diff --name-only "$BASE" HEAD -- clawdroid.d.ts manifest.schema.json builtin.json 2>/dev/null | head -1)
+          ROOT_CHANGED=$(git diff --name-only "$BASE" HEAD -- plugins/clawdroid.d.ts plugins/manifest.schema.json plugins/builtin.json 2>/dev/null | head -1)
           if [ -n "$ROOT_CHANGED" ]; then
-            CHANGED_PLUGINS=$(ls packages/ | tr '\n' ' ')
+            CHANGED_PLUGINS=$(ls plugins/packages/ | tr '\n' ' ')
             echo "Root SDK files changed — rebuilding all plugins"
           else
-            CHANGED_PLUGINS=$(git diff --name-only "$BASE" HEAD -- 'packages/**' 2>/dev/null \
-              | grep '^packages/' \
-              | cut -d/ -f2 \
+            CHANGED_PLUGINS=$(git diff --name-only "$BASE" HEAD -- 'plugins/packages/**' 2>/dev/null \
+              | grep '^plugins/packages/' \
+              | cut -d/ -f3 \
               | sort -u \
               | tr '\n' ' ')
           fi
@@ -54,7 +54,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
             npm install --prefix "$plugin" --silent
           done
@@ -62,9 +62,9 @@ jobs:
       - name: Typecheck
         run: |
           FAILED=""
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            name="${plugin#packages/}"; name="${name%/}"
+            name="${plugin#plugins/packages/}"; name="${name%/}"
             echo "Typechecking $name..."
             npm run typecheck --prefix "$plugin" || FAILED="$FAILED $name"
           done
@@ -76,9 +76,9 @@ jobs:
       - name: Test
         run: |
           FAILED=""
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            name="${plugin#packages/}"; name="${name%/}"
+            name="${plugin#plugins/packages/}"; name="${name%/}"
             echo "Testing $name..."
             npm run test --prefix "$plugin" || FAILED="$FAILED $name"
           done
@@ -97,7 +97,7 @@ jobs:
             exit 0
           fi
           for name in $CHANGED; do
-            plugin="packages/$name/"
+            plugin="plugins/packages/$name/"
             [ -d "$plugin" ] || continue
             [ -f "${plugin}manifest.json" ] || continue
             echo "Building $name..."
@@ -110,14 +110,14 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.built_plugins != ''
         run: |
           REPO="https://github.com/${{ github.repository }}"
-          BUNDLED=$(node -e "console.log(JSON.stringify(require('./builtin.json').bundled))")
+          BUNDLED=$(node -e "console.log(JSON.stringify(require('./plugins/builtin.json').bundled))")
           SHORT_SHA="${GITHUB_SHA::7}"
           mkdir -p release-artifacts
 
           # Build all plugins (not just changed) for a complete plugins.zip + plugins.json
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            name="${plugin#packages/}"; name="${name%/}"
+            name="${plugin#plugins/packages/}"; name="${name%/}"
             # Build if not already built
             if [ ! -f "${plugin}dist/index.js" ]; then
               mkdir -p "${plugin}dist"
@@ -134,8 +134,8 @@ jobs:
           node -e "
             const fs = require('fs');
             const bundled = ${BUNDLED};
-            const plugins = fs.readdirSync('packages').flatMap(name => {
-              const mpath = \`packages/\${name}/manifest.json\`;
+            const plugins = fs.readdirSync('plugins/packages').flatMap(name => {
+              const mpath = \`plugins/packages/\${name}/manifest.json\`;
               if (!fs.existsSync(mpath)) return [];
               const m = JSON.parse(fs.readFileSync(mpath, 'utf8'));
               return [{
@@ -149,7 +149,7 @@ jobs:
                 bundled: bundled.includes(name),
                 featured: m.featured ?? bundled.includes(name),
                 icon_url: m.icon_url || null,
-                manifest_url: \`https://raw.githubusercontent.com/\${{ github.repository }}/main/packages/\${name}/manifest.json\`,
+                manifest_url: \`https://raw.githubusercontent.com/\${{ github.repository }}/main/plugins/packages/\${name}/manifest.json\`,
                 bundle_url: \`${REPO}/releases/download/latest/\${name}.zip\`,
               }];
             }).sort((a, b) => a.name.localeCompare(b.name));
@@ -167,9 +167,9 @@ jobs:
 
           # Combined plugins.zip
           mkdir -p all-plugins
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            name="${plugin#packages/}"; name="${name%/}"
+            name="${plugin#plugins/packages/}"; name="${name%/}"
             mkdir -p "all-plugins/${name}"
             cp "${plugin}dist/index.js" "all-plugins/${name}/index.js"
             cp "${plugin}manifest.json" "all-plugins/${name}/manifest.json"
