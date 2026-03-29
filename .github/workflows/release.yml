@@ -23,21 +23,21 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: 'packages/*/package-lock.json'
+          cache-dependency-path: 'plugins/packages/*/package-lock.json'
 
       - name: Install dependencies
         run: |
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            echo "Installing deps for ${plugin#packages/}"
+            echo "Installing deps for ${plugin#plugins/packages/}"
             npm install --prefix "$plugin"
           done
 
       - name: Build all plugins
         run: |
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            echo "Building ${plugin#packages/}"
+            echo "Building ${plugin#plugins/packages/}"
             mkdir -p "${plugin}dist"
             npm run build:release --prefix "$plugin"
           done
@@ -47,15 +47,15 @@ jobs:
           RELEASE_TAG="${GITHUB_REF_NAME:-dev}"
           VERSION="${RELEASE_TAG#v}"
           REPO="https://github.com/${{ github.repository }}"
-          BUNDLED=$(node -e "console.log(JSON.stringify(require('./builtin.json').bundled))")
+          BUNDLED=$(node -e "console.log(JSON.stringify(require('./plugins/builtin.json').bundled))")
 
           mkdir -p release-artifacts
 
           # Per-plugin zips + collect catalog entries
           CATALOG_ENTRIES=""
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            name="${plugin#packages/}"
+            name="${plugin#plugins/packages/}"
             name="${name%/}"
 
             # Per-plugin zip
@@ -109,9 +109,9 @@ jobs:
 
           # Combined plugins.zip (all plugins, for Gradle download)
           mkdir -p all-plugins
-          for plugin in packages/*/; do
+          for plugin in plugins/packages/*/; do
             [ -f "${plugin}manifest.json" ] || continue
-            name="${plugin#packages/}"
+            name="${plugin#plugins/packages/}"
             name="${name%/}"
             mkdir -p "all-plugins/${name}"
             cp "${plugin}dist/index.js" "all-plugins/${name}/index.js"
