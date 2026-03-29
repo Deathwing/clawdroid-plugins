@@ -12,7 +12,7 @@
  * - buildConfig() — build trigger config from input
  */
 
-import type { PluginContext, ToolResult, ToolError } from "./clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
 import { sendMessage, getUpdates, getUpdatesRaw, forwardMessage, sendPhoto } from "./tools/messages";
 import { getMe, getChat, getChatMemberCount } from "./tools/chats";
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2026 Robert (Deathwing). All rights reserved.
 // Licensed under proprietary license. See LICENSE file in the project root.
 
-import type { FetchResponse } from "./clawdroid.d";
+import type { FetchResponse } from "../../../clawdroid.d";
 
 /**
  * Telegram Bot API helper.

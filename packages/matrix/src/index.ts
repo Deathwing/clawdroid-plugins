@@ -12,7 +12,7 @@
  * - buildConfig() — build trigger config from input
  */
 
-import type { PluginContext, ToolResult, ToolError } from "./clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
 import { parseCredential, matrixGet } from "./api";
 import { listRooms, joinRoom, getRoomInfo } from "./tools/rooms";
 import { sendMessage, readRoom, getProfile } from "./tools/messages";

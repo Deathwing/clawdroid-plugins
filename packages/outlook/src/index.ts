@@ -12,7 +12,7 @@
  * - buildConfig() — build trigger config from input
  */
 
-import type { PluginContext, ToolResult, ToolError } from "./clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
 import { sendMail, listMail, readMail, searchMail } from "./tools/mail";
 import { listEvents, createEvent } from "./tools/calendar";
 import { listTeams, listChannels, sendTeamsMessage } from "./tools/teams";

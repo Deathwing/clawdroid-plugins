@@ -8,7 +8,7 @@
  * - discoverTools() + execute() — tool execution
  */
 
-import type { PluginContext, ToolResult, ToolError } from "./clawdroid.d";
+import type { PluginContext, ToolResult, ToolError } from "../../../clawdroid.d";
 import { getPlayback, play, pause, next, previous, setVolume, setShuffle, setRepeat, addToQueue, getQueue } from "./tools/player";
 import { search } from "./tools/search";
 import { listPlaylists, getPlaylist, createPlaylist, addToPlaylist, removeFromPlaylist, updatePlaylistDetails, getPlaylistItems, reorderPlaylistItems, replacePlaylistItems, getPlaylistCoverImage, setPlaylistCoverImage } from "./tools/playlists";
