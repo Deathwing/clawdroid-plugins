@@ -1,0 +1,304 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:youtube",
+  "name": "YouTube",
+  "description": "Search videos, manage playlists, rate videos, and browse your YouTube library via the YouTube Data API v3",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "entertainment",
+  "clawdroid_plugin": 10,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "oauth2",
+    "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent",
+    "token_url": "https://oauth2.googleapis.com/token",
+    "client_id": "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/youtube"
+    ],
+    "pkce": true,
+    "redirect_uri": "clawdroid://oauth/callback",
+    "refresh": true,
+    "account_label": "Google / YouTube",
+    "help_text": "Requires a Google Cloud project: 1) Go to console.cloud.google.com, 2) Enable the YouTube Data API v3, 3) Create OAuth 2.0 Web Application credentials, 4) Add clawdroid://oauth/callback as an authorized redirect URI, 5) Replace client_id in this manifest with your Client ID."
+  },
+  "tools": [
+    {
+      "name": "youtube_search",
+      "description": "Search YouTube for videos, channels, or playlists. Returns titles, channel names, IDs, and URLs.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Search terms to look for.",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "description": "Type of content to search: \"video\", \"channel\", or \"playlist\". Defaults to \"video\".",
+          "required": false
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Number of results to return (1–50). Defaults to 10.",
+          "required": false
+        },
+        {
+          "name": "order",
+          "type": "string",
+          "description": "Sort order: \"relevance\", \"rating\", \"viewCount\", or \"date\". Defaults to \"relevance\".",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "search_videos",
+          "name": "Search for videos",
+          "user_prompt": "Search YouTube for lo-fi music videos",
+          "expected_tool_calls": {
+            "youtube_search": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_get_video",
+      "description": "Get detailed information about a YouTube video: title, channel, duration, view count, likes, comments, and description.",
+      "parameters": [
+        {
+          "name": "video_id",
+          "type": "string",
+          "description": "The YouTube video ID (the part after ?v= in the URL, e.g. dQw4w9WgXcQ).",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_video_details",
+          "name": "Get video details",
+          "user_prompt": "Get info about the YouTube video dQw4w9WgXcQ",
+          "expected_tool_calls": {
+            "youtube_get_video": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_get_channel",
+      "description": "Get details about a YouTube channel: name, subscriber count, video count, total views, and description. Omit channel_id to get your own channel.",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "type": "string",
+          "description": "The YouTube channel ID. Omit to retrieve your own channel details.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "my_channel",
+          "name": "Get my channel",
+          "user_prompt": "Show me my YouTube channel info",
+          "expected_tool_calls": {
+            "youtube_get_channel": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_list_my_playlists",
+      "description": "List all playlists on your YouTube channel, including video count and privacy status.",
+      "parameters": [
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of playlists to return (1–50). Defaults to 25.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_playlists",
+          "name": "List my playlists",
+          "user_prompt": "Show me all my YouTube playlists",
+          "expected_tool_calls": {
+            "youtube_list_my_playlists": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_get_playlist_items",
+      "description": "List the videos inside a YouTube playlist.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The YouTube playlist ID.",
+          "required": true
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of videos to return (1–50). Defaults to 25.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_playlist_items",
+          "name": "Get playlist videos",
+          "user_prompt": "Show me videos in my favorites playlist",
+          "expected_tool_calls": {
+            "youtube_get_playlist_items": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_add_to_playlist",
+      "description": "Add a video to one of your YouTube playlists.",
+      "parameters": [
+        {
+          "name": "playlist_id",
+          "type": "string",
+          "description": "The ID of the playlist to add the video to.",
+          "required": true
+        },
+        {
+          "name": "video_id",
+          "type": "string",
+          "description": "The YouTube video ID to add.",
+          "required": true
+        },
+        {
+          "name": "position",
+          "type": "integer",
+          "description": "Zero-based position to insert the video at. Omit to append to end.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "add_to_playlist",
+          "name": "Add video to playlist",
+          "user_prompt": "Add video dQw4w9WgXcQ to my Watch Later playlist",
+          "expected_tool_calls": {
+            "youtube_add_to_playlist": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_create_playlist",
+      "description": "Create a new YouTube playlist on your channel.",
+      "parameters": [
+        {
+          "name": "title",
+          "type": "string",
+          "description": "Title for the new playlist.",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "description": "Optional description for the playlist.",
+          "required": false
+        },
+        {
+          "name": "privacy",
+          "type": "string",
+          "description": "Privacy setting: \"public\", \"private\", or \"unlisted\". Defaults to \"public\".",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "create_playlist",
+          "name": "Create a playlist",
+          "user_prompt": "Create a private YouTube playlist called Study Music",
+          "expected_tool_calls": {
+            "youtube_create_playlist": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_remove_from_playlist",
+      "description": "Remove a video from a playlist using its playlist item ID (returned by youtube_get_playlist_items).",
+      "parameters": [
+        {
+          "name": "playlist_item_id",
+          "type": "string",
+          "description": "The playlist item ID to remove (not the video ID — use youtube_get_playlist_items to find it).",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "remove_from_playlist",
+          "name": "Remove from playlist",
+          "user_prompt": "Remove the first video from my cooking playlist",
+          "expected_tool_calls": {
+            "youtube_get_playlist_items": 1,
+            "youtube_remove_from_playlist": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_rate_video",
+      "description": "Like or dislike a YouTube video, or remove your rating.",
+      "parameters": [
+        {
+          "name": "video_id",
+          "type": "string",
+          "description": "The YouTube video ID to rate.",
+          "required": true
+        },
+        {
+          "name": "rating",
+          "type": "string",
+          "description": "\"like\", \"dislike\", or \"none\" (removes any existing rating).",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "like_video",
+          "name": "Like a video",
+          "user_prompt": "Like the YouTube video dQw4w9WgXcQ",
+          "expected_tool_calls": {
+            "youtube_rate_video": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "youtube_list_subscriptions",
+      "description": "List the YouTube channels you are subscribed to.",
+      "parameters": [
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum number of subscriptions to return (1–50). Defaults to 25.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_subscriptions",
+          "name": "List subscriptions",
+          "user_prompt": "Show me the YouTube channels I'm subscribed to",
+          "expected_tool_calls": {
+            "youtube_list_subscriptions": 1
+          }
+        }
+      ]
+    }
+  ]
+}
