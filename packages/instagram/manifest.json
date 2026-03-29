@@ -15,15 +15,16 @@
     "authorize_url": "https://www.instagram.com/oauth/authorize",
     "token_url": "https://api.instagram.com/oauth/access_token",
     "client_id": "YOUR_META_APP_ID",
-    "client_secret": "YOUR_META_APP_SECRET",
     "scopes": [
       "instagram_business_basic",
       "instagram_business_content_publish",
       "instagram_business_manage_comments"
     ],
+    "pkce": true,
     "redirect_uri": "clawdroid://oauth/callback",
+    "refresh": false,
     "account_label": "Instagram",
-    "help_text": "Sign in with your Instagram Business or Creator account."
+    "help_text": "Requires your own Meta app: go to developers.facebook.com, create an app, add the Instagram product, and paste your App ID above. Add clawdroid://oauth/callback as an allowed redirect URI. No app secret needed \u2014 PKCE is used instead."
   },
   "tools": [
     {
