@@ -1,0 +1,144 @@
+{
+  "version": 1,
+  "generated_at": "2026-03-29T00:00:00Z",
+  "mcps": [
+    {
+      "id": "filesystem",
+      "name": "Filesystem",
+      "description": "Read and write files on your device's filesystem with sandboxed path access",
+      "author": "Anthropic",
+      "category": "utilities",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-filesystem",
+      "args_hint": "/path/to/allowed/dir",
+      "featured": true,
+      "icon_url": null
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "description": "Interact with GitHub repositories, issues, pull requests, and code search",
+      "author": "Anthropic",
+      "category": "development",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-github",
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "" },
+      "featured": true,
+      "icon_url": null
+    },
+    {
+      "id": "brave-search",
+      "name": "Brave Search",
+      "description": "Web and local search powered by Brave Search API",
+      "author": "Anthropic",
+      "category": "search",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-brave-search",
+      "env": { "BRAVE_API_KEY": "" },
+      "featured": true,
+      "icon_url": null
+    },
+    {
+      "id": "fetch",
+      "name": "Fetch",
+      "description": "Fetch web pages and convert them to markdown for the agent to read",
+      "author": "Anthropic",
+      "category": "utilities",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-fetch",
+      "featured": true,
+      "icon_url": null
+    },
+    {
+      "id": "memory",
+      "name": "Memory",
+      "description": "Persistent key-value memory store for the agent across conversations",
+      "author": "Anthropic",
+      "category": "utilities",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-memory",
+      "featured": true,
+      "icon_url": null
+    },
+    {
+      "id": "sequential-thinking",
+      "name": "Sequential Thinking",
+      "description": "Dynamic problem-solving through structured thought sequences",
+      "author": "Anthropic",
+      "category": "utilities",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-sequential-thinking",
+      "featured": false,
+      "icon_url": null
+    },
+    {
+      "id": "puppeteer",
+      "name": "Puppeteer",
+      "description": "Browser automation and web scraping via Puppeteer",
+      "author": "Anthropic",
+      "category": "automation",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-puppeteer",
+      "featured": false,
+      "icon_url": null
+    },
+    {
+      "id": "sqlite",
+      "name": "SQLite",
+      "description": "Query and manage SQLite databases with full SQL support",
+      "author": "Anthropic",
+      "category": "databases",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-sqlite",
+      "args_hint": "/path/to/database.db",
+      "featured": false,
+      "icon_url": null
+    },
+    {
+      "id": "postgres",
+      "name": "PostgreSQL",
+      "description": "Connect to and query PostgreSQL databases",
+      "author": "Anthropic",
+      "category": "databases",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-postgres",
+      "env": { "POSTGRES_URL": "" },
+      "featured": false,
+      "icon_url": null
+    },
+    {
+      "id": "time",
+      "name": "Time",
+      "description": "Get current time and timezone information, and convert between timezones",
+      "author": "Anthropic",
+      "category": "utilities",
+      "transport": "node-stdio",
+      "command": "npx -y @modelcontextprotocol/server-time",
+      "featured": false,
+      "icon_url": null
+    },
+    {
+      "id": "exa",
+      "name": "Exa Search",
+      "description": "AI-powered web search with semantic understanding via Exa API",
+      "author": "Exa",
+      "category": "search",
+      "transport": "node-stdio",
+      "command": "npx -y exa-mcp-server",
+      "env": { "EXA_API_KEY": "" },
+      "featured": false,
+      "icon_url": null
+    },
+    {
+      "id": "context7",
+      "name": "Context7",
+      "description": "Fetch up-to-date library documentation and code examples from Context7",
+      "author": "Upstash",
+      "category": "development",
+      "transport": "node-stdio",
+      "command": "npx -y @upstash/context7-mcp",
+      "featured": false,
+      "icon_url": null
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+# Copyright (c) 2026 Robert (Deathwing). All rights reserved.
+# Licensed under proprietary license. See LICENSE file in the project root.
+
+name: Community Catalog CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'mcps/**'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'skills/**'
+      - 'mcps/**'
+
+permissions:
+  contents: write
+
+jobs:
+  publish-catalog:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+
+      - name: Validate MCP catalog JSON
+        run: |
+          node -e "
+            const fs = require('fs');
+            const catalog = JSON.parse(fs.readFileSync('mcps/catalog.json', 'utf8'));
+            if (!Array.isArray(catalog.mcps)) throw new Error('mcps must be an array');
+            for (const m of catalog.mcps) {
+              if (!m.id || !m.name || !m.command) throw new Error('MCP missing required field: ' + JSON.stringify(m));
+            }
+            console.log('MCP catalog valid:', catalog.mcps.length, 'entries');
+          "
+
+      - name: Generate skills.json from markdown frontmatter
+        run: |
+          node -e "
+            const fs = require('fs');
+            const REPO = 'https://raw.githubusercontent.com/\${{ github.repository }}/main';
+            const skillFiles = fs.readdirSync('skills').filter(f => f.endsWith('.md') && f !== 'README.md');
+
+            const skills = skillFiles.flatMap(file => {
+              const content = fs.readFileSync('skills/' + file, 'utf8');
+              const match = content.match(/^---\n([\s\S]+?)\n---/);
+              if (!match) { console.warn('No frontmatter in', file); return []; }
+
+              // Parse simple YAML frontmatter (key: value lines only)
+              const meta = {};
+              for (const line of match[1].split('\n')) {
+                const kv = line.match(/^(\w+):\s*(.+)$/);
+                if (kv) meta[kv[1]] = kv[2].trim();
+              }
+              if (!meta.id || !meta.name) { console.warn('Missing id/name in', file); return []; }
+
+              return [{
+                id: meta.id,
+                name: meta.name,
+                description: meta.description || '',
+                author: meta.author || 'ClawDroid',
+                category: meta.category || 'general',
+                featured: meta.featured === 'true',
+                icon_url: meta.icon_url || null,
+                content_url: REPO + '/skills/' + file,
+                download_count: 0,
+              }];
+            }).sort((a, b) => {
+              if (a.featured !== b.featured) return a.featured ? -1 : 1;
+              return a.name.localeCompare(b.name);
+            });
+
+            const catalog = {
+              version: 1,
+              commit: process.env.GITHUB_SHA ? process.env.GITHUB_SHA.slice(0, 7) : 'local',
+              generated_at: new Date().toISOString(),
+              skills,
+            };
+            fs.mkdirSync('release-artifacts', { recursive: true });
+            fs.writeFileSync('release-artifacts/skills.json', JSON.stringify(catalog, null, 2));
+            console.log('Generated skills.json with', skills.length, 'skills');
+          "
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+
+      - name: Copy MCP catalog to artifacts
+        run: |
+          cp mcps/catalog.json release-artifacts/mcps.json
+          ls -lh release-artifacts/
+
+      # ── Only publish on push to main ─────────────────────────────────────────
+      - name: Publish rolling 'latest' catalog release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: "Latest (rolling)"
+          prerelease: true
+          files: release-artifacts/*
+          body: |
+            Auto-updated catalog reflecting the current state of `main`.
+
+            **Commit:** ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
