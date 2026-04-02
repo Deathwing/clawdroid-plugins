@@ -49,6 +49,7 @@ The following plugins are pre-shipped with ClawDroid (defined in [`plugins/built
 | Plugin | Category | Description |
 |--------|----------|-------------|
 | [github](plugins/packages/github/) | Developer | Repos, issues, PRs, branches, file contents |
+| [google](plugins/packages/google/) | Productivity | Gmail, Calendar, and Chat via Google Workspace APIs |
 | [instagram](plugins/packages/instagram/) | Social | Posts, media, comments, insights |
 | [matrix](plugins/packages/matrix/) | Messaging | Rooms, messages, profiles |
 | [outlook](plugins/packages/outlook/) | Productivity | Mail, Calendar, Teams via Microsoft Graph |
@@ -78,7 +79,26 @@ export function formatLabel(triggerType: string, config: PluginConfig): string
 export function buildConfig(triggerType: string): ConfigField[]
 ```
 
+`execute()` should always return a human-readable `message` string for the agent transcript. It can also return an optional `summary` plus structured `blocks` so the native app can render richer UI such as status chips, code blocks, tables, file links, and plugin-specific cards. For plain file-content results, prefer setting `contentPath`; the default enhancer will promote that into a path-aware code block automatically.
+
+```typescript
+return {
+  message: "GitHub is installed but still needs to be connected.",
+  summary: "GitHub setup required",
+  blocks: [
+    { type: "status", message: "GitHub account not connected", isSuccess: false },
+    {
+      type: "card",
+      cardType: "plugin_setup",
+      data: { plugin_id: "builtin:github", reason: "oauth_required" },
+    },
+  ],
+};
+```
+
 See [`plugins/quickjs.d.ts`](plugins/quickjs.d.ts) for full QuickJS plugin type definitions, and [`plugins/node.d.ts`](plugins/node.d.ts) for the embedded Node.js runtime types (`global.clawdroid`, `__vars`).
+
+For a concrete community package that already uses `summary` plus structured native blocks, see [`plugins/packages/youtube/src/`](plugins/packages/youtube/src/).
 
 ---
 

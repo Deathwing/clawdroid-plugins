@@ -15,8 +15,19 @@
 import type { PluginContext, ToolResult, ToolError } from "../../../quickjs.d";
 import { sendMessage, getUpdates, getUpdatesRaw, forwardMessage, sendPhoto } from "./tools/messages";
 import { getMe, getChat, getChatMemberCount } from "./tools/chats";
+import { errorResult } from "./result";
 
 type ToolInput = Record<string, unknown>;
+type NotificationPayload = {
+  packageName: string;
+  appName?: string;
+  title?: string;
+  text?: string;
+  bigText?: string;
+  conversationTitle?: string;
+  timestamp?: number;
+  messages?: Array<{ sender?: string; text?: string }>;
+};
 
 /** Tool definitions are declared in manifest.json — nothing to discover at runtime */
 export function discoverTools(): [] {
@@ -33,52 +44,60 @@ export async function execute(
 ): Promise<ToolResult | ToolError> {
   const token = await ctx.host.getSecret("token");
   if (!token) {
-    return { error: true, message: "Telegram not connected. Add your bot token in Settings first." };
+    return errorResult(
+      "Telegram not connected. Add your bot token in Settings first.",
+      "Telegram connection required",
+    );
   }
 
-  let result: string;
-  switch (toolName) {
-    case "telegram_send_message":
-      result = await sendMessage(
-        token,
-        String(input.chat_id || ""),
-        String(input.text || ""),
-        input.parse_mode ? String(input.parse_mode) : undefined,
-      );
-      break;
-    case "telegram_get_me":
-      result = await getMe(token);
-      break;
-    case "telegram_get_chat":
-      result = await getChat(token, String(input.chat_id || ""));
-      break;
-    case "telegram_get_updates":
-      result = await getUpdates(
-        token,
-        input.limit ? Number(input.limit) : 10,
-      );
-      break;
-    case "telegram_forward_message":
-      result = await forwardMessage(
-        token,
-        String(input.chat_id || ""),
-        String(input.from_chat_id || ""),
-        String(input.message_id || ""),
-      );
-      break;
-    case "telegram_send_photo":
-      result = await sendPhoto(
-        token,
-        String(input.chat_id || ""),
-        String(input.photo_url || ""),
-        input.caption ? String(input.caption) : undefined,
-      );
-      break;
-    default:
-      return { error: true, message: `Unknown Telegram tool: ${toolName}` };
-  }
+  try {
+    let result: ToolResult;
+    switch (toolName) {
+      case "telegram_send_message":
+        result = await sendMessage(
+          token,
+          String(input.chat_id || ""),
+          String(input.text || ""),
+          input.parse_mode ? String(input.parse_mode) : undefined,
+        );
+        break;
+      case "telegram_get_me":
+        result = await getMe(token);
+        break;
+      case "telegram_get_chat":
+        result = await getChat(token, String(input.chat_id || ""));
+        break;
+      case "telegram_get_updates":
+        result = await getUpdates(
+          token,
+          input.limit ? Number(input.limit) : 10,
+        );
+        break;
+      case "telegram_forward_message":
+        result = await forwardMessage(
+          token,
+          String(input.chat_id || ""),
+          String(input.from_chat_id || ""),
+          String(input.message_id || ""),
+        );
+        break;
+      case "telegram_send_photo":
+        result = await sendPhoto(
+          token,
+          String(input.chat_id || ""),
+          String(input.photo_url || ""),
+          input.caption ? String(input.caption) : undefined,
+        );
+        break;
+      default:
+        return errorResult(`Unknown Telegram tool: ${toolName}`, "Unsupported Telegram tool");
+    }
 
-  return { message: result };
+    return result;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return errorResult(message, "Telegram request failed");
+  }
 }
 
 // ─── Trigger Exports ────────────────────────────────────────
@@ -153,4 +172,41 @@ export function buildConfig(
   const cfg: Record<string, string> = {};
   if (input.chat_id) cfg.chat_id = String(input.chat_id);
   return cfg;
+}
+
+export function parseNotification(
+  _appType: string,
+  notification: NotificationPayload,
+): Record<string, string> | null {
+  const messages = notification.messages || [];
+  if (messages.length > 0) {
+    const last = messages[messages.length - 1];
+    const sender = last.sender?.trim();
+    const text = last.text?.trim();
+    if (!sender || !text) {
+      return null;
+    }
+
+    const title = notification.title?.trim();
+    const conversationTitle = notification.conversationTitle?.trim();
+    const groupName = conversationTitle || (title && title !== sender ? title : "");
+    return {
+      moduleType: "message",
+      sender,
+      text,
+      groupName,
+    };
+  }
+
+  const sender = notification.title?.trim();
+  const text = notification.text?.trim();
+  if (!sender || !text) {
+    return null;
+  }
+
+  return {
+    moduleType: "message",
+    sender,
+    text,
+  };
 }

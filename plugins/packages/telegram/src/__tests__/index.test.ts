@@ -6,7 +6,7 @@ vi.stubGlobal("fetch", mockFetch);
 vi.stubGlobal("host", mockHost);
 vi.stubGlobal("console", { log: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() });
 
-import { discoverTools, execute, matchEvent, formatLabel, buildConfig } from "../index";
+import { discoverTools, execute, checkTrigger, matchEvent, formatLabel, buildConfig } from "../index";
 
 function mockCtx(token: string | null = "bot123456:ABCdef") {
   return { host: { ...mockHost, getSecret: vi.fn().mockResolvedValue(token) } as any };
@@ -29,14 +29,22 @@ describe("discoverTools", () => {
 // ─── execute ────────────────────────────────────────────
 
 describe("execute", () => {
-  it("returns error when no token", async () => {
+  it("returns structured error when no token", async () => {
     const result = await execute("telegram_get_me", {}, mockCtx(null));
-    expect(result).toEqual({ error: true, message: "Telegram not connected. Add your bot token in Settings first." });
+    expect(result).toMatchObject({
+      error: true,
+      message: "Telegram not connected. Add your bot token in Settings first.",
+      summary: "Telegram connection required",
+    });
   });
 
-  it("returns error for unknown tool", async () => {
+  it("returns structured error for unknown tool", async () => {
     const result = await execute("telegram_nonexistent", {}, mockCtx());
-    expect(result).toEqual({ error: true, message: "Unknown Telegram tool: telegram_nonexistent" });
+    expect(result).toMatchObject({
+      error: true,
+      message: "Unknown Telegram tool: telegram_nonexistent",
+      summary: "Unsupported Telegram tool",
+    });
   });
 
   it("dispatches telegram_get_me", async () => {
@@ -45,6 +53,8 @@ describe("execute", () => {
     );
     const result = await execute("telegram_get_me", {}, mockCtx());
     expect((result as any).message).toContain("testbot");
+    expect((result as any).summary).toBe("Bot @testbot");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches telegram_send_message", async () => {
@@ -52,7 +62,8 @@ describe("execute", () => {
       jsonResp({ ok: true, result: { message_id: 1, text: "Hello" } }),
     );
     const result = await execute("telegram_send_message", { chat_id: "123", text: "Hello" }, mockCtx());
-    expect((result as any).message).toBeDefined();
+    expect((result as any).summary).toBe("Message sent");
+    expect((result as any).blocks[0]).toMatchObject({ type: "status", isSuccess: true });
   });
 
   it("dispatches telegram_get_chat", async () => {
@@ -61,6 +72,8 @@ describe("execute", () => {
     );
     const result = await execute("telegram_get_chat", { chat_id: "123" }, mockCtx());
     expect((result as any).message).toContain("123");
+    expect((result as any).summary).toBe("Chat 123");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches telegram_get_updates", async () => {
@@ -68,7 +81,8 @@ describe("execute", () => {
       jsonResp({ ok: true, result: [{ update_id: 1, message: { text: "Hi", chat: { id: 1 }, from: { first_name: "Bob" }, message_id: 10, date: 1700000000 } }] }),
     );
     const result = await execute("telegram_get_updates", { limit: 5 }, mockCtx());
-    expect((result as any).message).toBeDefined();
+    expect((result as any).summary).toBe("1 update found");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches telegram_forward_message", async () => {
@@ -80,7 +94,8 @@ describe("execute", () => {
       { chat_id: "100", from_chat_id: "200", message_id: "1" },
       mockCtx(),
     );
-    expect((result as any).message).toBeDefined();
+    expect((result as any).summary).toBe("Message forwarded");
+    expect((result as any).blocks[0]).toMatchObject({ type: "status", isSuccess: true });
   });
 
   it("dispatches telegram_send_photo", async () => {
@@ -92,7 +107,54 @@ describe("execute", () => {
       { chat_id: "100", photo_url: "https://example.com/img.png", caption: "Look!" },
       mockCtx(),
     );
-    expect((result as any).message).toBeDefined();
+    expect((result as any).summary).toBe("Photo sent");
+    expect((result as any).blocks[0]).toMatchObject({ type: "status", isSuccess: true });
+  });
+});
+
+// ─── checkTrigger ──────────────────────────────────────
+
+describe("checkTrigger", () => {
+  it("uses the passed plugin context for telegram polling", async () => {
+    const ctx = mockCtx();
+    mockHost.getSecret.mockResolvedValue(null);
+    mockFetch.mockResolvedValue(
+      jsonResp({
+        ok: true,
+        result: [
+          {
+            update_id: 1,
+            message: {
+              chat: { id: 123 },
+              from: { first_name: "Bob" },
+              text: "Ping",
+              message_id: 10,
+              date: 1700000000,
+            },
+          },
+        ],
+      }),
+    );
+
+    const result = await checkTrigger(
+      "telegram_message",
+      {},
+      {},
+      ctx as any,
+    );
+
+    expect(result.events).toEqual([
+      {
+        chat_id: "123",
+        from_name: "Bob",
+        text: "Ping",
+        message_id: "10",
+        date: new Date(1700000000 * 1000).toISOString(),
+      },
+    ]);
+    expect(result.state).toMatchObject({ offset: 2 });
+    expect((ctx as any).host.getSecret).toHaveBeenCalledWith("token");
+    expect(mockHost.getSecret).not.toHaveBeenCalled();
   });
 });
 

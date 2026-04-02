@@ -5,7 +5,7 @@
   "author": "Robert (Deathwing) <deathwing_shadow@hotmail.de>",
   "license": "MIT",
   "scripts": {
-    "build:release": "npm run build:release --workspaces",
+    "build": "npm run build --workspaces",
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm run test --workspaces"
   },

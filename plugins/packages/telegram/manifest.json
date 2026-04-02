@@ -15,6 +15,18 @@
     "account_label": "Telegram Bot",
     "help_text": "Enter your bot token from @BotFather (format: 123456789:ABCdefGHI...)"
   },
+  "notifications": [
+    {
+      "app_type": "telegram",
+      "module_type": "message",
+      "package_names": [
+        "org.telegram.messenger",
+        "org.telegram.messenger.web",
+        "org.thunderdog.chalern"
+      ],
+      "supports_direct_reply": true
+    }
+  ],
   "tools": [
     {
       "name": "telegram_send_message",

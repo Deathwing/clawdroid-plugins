@@ -26,6 +26,16 @@
     "account_label": "Instagram",
     "help_text": "Requires your own Meta app: go to developers.facebook.com, create an app, add the Instagram product, and paste your App ID above. Add clawdroid://oauth/callback as an allowed redirect URI. No app secret needed \u2014 PKCE is used instead."
   },
+  "notifications": [
+    {
+      "app_type": "instagram",
+      "module_type": "message",
+      "package_names": [
+        "com.instagram.android"
+      ],
+      "supports_direct_reply": true
+    }
+  ],
   "tools": [
     {
       "name": "instagram_get_profile",

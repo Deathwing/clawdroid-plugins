@@ -28,14 +28,23 @@ describe("discoverTools", () => {
 });
 
 describe("execute", () => {
-  it("returns error when no token", async () => {
+  it("returns structured error when no token", async () => {
     const result = await execute("instagram_get_profile", {}, mockCtx(null));
-    expect(result).toEqual({ error: true, message: "Instagram not connected. Sign in via Plugin settings." });
+    expect(result).toMatchObject({
+      error: true,
+      message: "Instagram not connected. Sign in via Plugin settings.",
+      summary: "Instagram connection required",
+    });
+    expect((result as any).blocks?.[0]).toMatchObject({ type: "status", isSuccess: false });
   });
 
-  it("returns error for unknown tool", async () => {
+  it("returns structured error for unknown tool", async () => {
     const result = await execute("instagram_nonexistent", {}, mockCtx());
-    expect(result).toEqual({ error: true, message: "Unknown Instagram tool: instagram_nonexistent" });
+    expect(result).toMatchObject({
+      error: true,
+      message: "Unknown Instagram tool: instagram_nonexistent",
+      summary: "Unsupported Instagram tool",
+    });
   });
 
   it("dispatches instagram_get_profile", async () => {
@@ -44,6 +53,8 @@ describe("execute", () => {
     );
     const result = await execute("instagram_get_profile", {}, mockCtx());
     expect((result as any).message).toContain("testuser");
+    expect((result as any).summary).toBe("Instagram @testuser");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches instagram_list_media", async () => {
@@ -52,6 +63,8 @@ describe("execute", () => {
       .mockResolvedValueOnce(jsonResp({ data: [{ id: "m1", caption: "Hello", media_type: "IMAGE", timestamp: "2024-01-01" }] }));
     const result = await execute("instagram_list_media", { limit: 5 }, mockCtx());
     expect((result as any).message).toContain("Hello");
+    expect((result as any).summary).toBe("1 post found");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches instagram_get_media", async () => {
@@ -60,6 +73,8 @@ describe("execute", () => {
     );
     const result = await execute("instagram_get_media", { media_id: "m1" }, mockCtx());
     expect((result as any).message).toContain("Photo");
+    expect((result as any).summary).toBe("Post m1");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches instagram_list_comments", async () => {
@@ -68,6 +83,8 @@ describe("execute", () => {
     );
     const result = await execute("instagram_list_comments", { media_id: "m1" }, mockCtx());
     expect((result as any).message).toContain("Nice!");
+    expect((result as any).summary).toBe("1 comment found");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches instagram_get_insights", async () => {
@@ -76,5 +93,16 @@ describe("execute", () => {
     );
     const result = await execute("instagram_get_insights", { media_id: "m1" }, mockCtx());
     expect((result as any).message).toContain("impressions");
+    expect((result as any).summary).toBe("1 insight metric loaded");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
+  });
+
+  it("dispatches instagram_publish_media with status blocks", async () => {
+    mockFetch
+      .mockResolvedValueOnce(jsonResp({ id: "123" }))
+      .mockResolvedValueOnce(jsonResp({ id: "published-1" }));
+    const result = await execute("instagram_publish_media", { creation_id: "create-1" }, mockCtx());
+    expect((result as any).summary).toBe("Media published");
+    expect((result as any).blocks[0]).toMatchObject({ type: "status", isSuccess: true });
   });
 });

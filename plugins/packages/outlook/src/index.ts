@@ -16,10 +16,21 @@ import type { PluginContext, ToolResult, ToolError } from "../../../quickjs.d";
 import { sendMail, listMail, readMail, searchMail } from "./tools/mail";
 import { listEvents, createEvent } from "./tools/calendar";
 import { listTeams, listChannels, sendTeamsMessage } from "./tools/teams";
+import { errorResult } from "./result";
 import { checkMailTrigger } from "./triggers/mail";
 import { checkCalendarTrigger } from "./triggers/calendar";
 
 type ToolInput = Record<string, unknown>;
+type NotificationPayload = {
+  packageName: string;
+  appName?: string;
+  title?: string;
+  text?: string;
+  bigText?: string;
+  conversationTitle?: string;
+  timestamp?: number;
+  messages?: Array<{ sender?: string; text?: string }>;
+};
 
 export function discoverTools(): [] {
   return [];
@@ -32,43 +43,51 @@ export async function execute(
 ): Promise<ToolResult | ToolError> {
   const token = await ctx.host.getSecret("token");
   if (!token) {
-    return { error: true, message: "Microsoft not connected. Sign in via Plugin settings." };
+    return errorResult(
+      "Microsoft not connected. Sign in via Plugin settings.",
+      "Microsoft connection required",
+    );
   }
 
-  let result: string;
-  switch (toolName) {
-    case "outlook_send_mail":
-      result = await sendMail(token, input);
-      break;
-    case "outlook_list_mail":
-      result = await listMail(token, input);
-      break;
-    case "outlook_read_mail":
-      result = await readMail(token, input);
-      break;
-    case "outlook_search_mail":
-      result = await searchMail(token, input);
-      break;
-    case "outlook_list_events":
-      result = await listEvents(token, input);
-      break;
-    case "outlook_create_event":
-      result = await createEvent(token, input);
-      break;
-    case "teams_list_teams":
-      result = await listTeams(token);
-      break;
-    case "teams_list_channels":
-      result = await listChannels(token, input);
-      break;
-    case "teams_send_message":
-      result = await sendTeamsMessage(token, input);
-      break;
-    default:
-      return { error: true, message: `Unknown Outlook tool: ${toolName}` };
-  }
+  try {
+    let result: ToolResult;
+    switch (toolName) {
+      case "outlook_send_mail":
+        result = await sendMail(token, input);
+        break;
+      case "outlook_list_mail":
+        result = await listMail(token, input);
+        break;
+      case "outlook_read_mail":
+        result = await readMail(token, input);
+        break;
+      case "outlook_search_mail":
+        result = await searchMail(token, input);
+        break;
+      case "outlook_list_events":
+        result = await listEvents(token, input);
+        break;
+      case "outlook_create_event":
+        result = await createEvent(token, input);
+        break;
+      case "teams_list_teams":
+        result = await listTeams(token);
+        break;
+      case "teams_list_channels":
+        result = await listChannels(token, input);
+        break;
+      case "teams_send_message":
+        result = await sendTeamsMessage(token, input);
+        break;
+      default:
+        return errorResult(`Unknown Outlook tool: ${toolName}`, "Unsupported Outlook tool");
+    }
 
-  return { message: result };
+    return result;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return errorResult(message, "Outlook request failed");
+  }
 }
 
 // ─── Trigger Exports ────────────────────────────────────────
@@ -77,13 +96,13 @@ export async function checkTrigger(
   triggerType: string,
   config: Record<string, unknown>,
   state: Record<string, unknown>,
-  _ctx: PluginContext,
+  ctx: PluginContext,
 ): Promise<{ events: Record<string, string>[]; state: Record<string, unknown> }> {
   switch (triggerType) {
     case "outlook_mail_received":
-      return checkMailTrigger(config, state) as any;
+      return checkMailTrigger(config, state, ctx) as any;
     case "outlook_event_starting":
-      return checkCalendarTrigger(config, state) as any;
+      return checkCalendarTrigger(config, state, ctx) as any;
     default:
       return { events: [], state };
   }
@@ -156,4 +175,23 @@ export function buildConfig(
     default:
       return {};
   }
+}
+
+export function parseNotification(
+  _appType: string,
+  notification: NotificationPayload,
+): Record<string, string> | null {
+  const sender = notification.title?.trim();
+  const subject = notification.text?.trim();
+  const body = (notification.bigText || notification.text)?.trim();
+  if (!sender || !body) {
+    return null;
+  }
+
+  return {
+    moduleType: "email",
+    sender,
+    subject: subject || "",
+    text: body,
+  };
 }

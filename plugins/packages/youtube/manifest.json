@@ -3,7 +3,7 @@
   "id": "builtin:youtube",
   "name": "YouTube",
   "description": "Search videos, manage playlists, rate videos, and browse your YouTube library via the YouTube Data API v3",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "author": "Robert (Deathwing)",
   "category": "entertainment",
   "clawdroid_plugin": 10,
@@ -12,17 +12,22 @@
   "entrypoint": "index.js",
   "auth": {
     "type": "oauth2",
-    "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth?access_type=offline&prompt=consent",
-    "token_url": "https://oauth2.googleapis.com/token",
-    "client_id": "4564009598-up5m0pcseeo3o4b2nl3g88i94bv5cohm.apps.googleusercontent.com",
+    "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+    "token_url": "https://clawdroid-proxy.clawdroid.workers.dev/oauth/google/token",
+    "client_id": "4564009598-a8n37hgsv078naf1nf6ven89uhab24pl.apps.googleusercontent.com",
+    "redirect_uri": "https://clawdroid-proxy.clawdroid.workers.dev/oauth/callback",
     "scopes": [
       "https://www.googleapis.com/auth/youtube"
     ],
     "pkce": true,
-    "redirect_uri": "clawdroid://oauth/callback",
+    "authorize_params": {
+      "access_type": "offline",
+      "prompt": "consent",
+      "include_granted_scopes": "true"
+    },
     "refresh": true,
     "account_label": "Google / YouTube",
-    "help_text": "Requires a Google Cloud project: 1) Go to console.cloud.google.com, 2) Enable the YouTube Data API v3, 3) Create OAuth 2.0 Web Application credentials, 4) Add clawdroid://oauth/callback as an authorized redirect URI, 5) Replace client_id in this manifest with your Client ID."
+    "help_text": "Requires a Google Cloud OAuth client of type 'Web application'. Enable YouTube Data API v3, set the authorized redirect URI to https://clawdroid-proxy.clawdroid.workers.dev/oauth/callback, replace client_id in this manifest with that web client ID, and configure GOOGLE_OAUTH_WEB_CLIENT_ID plus GOOGLE_OAUTH_WEB_CLIENT_SECRET on the backend with the same client."
   },
   "tools": [
     {

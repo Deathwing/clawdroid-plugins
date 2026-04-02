@@ -3,7 +3,7 @@
   "id": "builtin:spotify",
   "name": "Spotify",
   "description": "Control playback, search music, manage playlists and library via Spotify Web API",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "Robert (Deathwing)",
   "category": "entertainment",
   "clawdroid_plugin": 9,

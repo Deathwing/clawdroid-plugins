@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Robert (Deathwing). All rights reserved.
 // Licensed under proprietary license. See LICENSE file in the project root.
 
+import type { PluginContext } from "../../../../quickjs.d";
 import { githubGet } from "../api";
 
 interface NotificationEvent {
@@ -29,10 +30,6 @@ interface TriggerResult {
   state: TriggerState;
 }
 
-declare const host: {
-  getSecret(key: string): Promise<string | null>;
-};
-
 /**
  * Polls GitHub /notifications to produce events for all three trigger types.
  * The JsToolTriggerPlugin calls checkTrigger() once per trigger type per tick,
@@ -46,8 +43,9 @@ export async function checkNotifications(
   triggerType: string,
   _config: Record<string, unknown>,
   state: TriggerState,
+  ctx: PluginContext,
 ): Promise<TriggerResult> {
-  const token = await host.getSecret("token");
+  const token = await ctx.host.getSecret("token");
   if (!token) return { events: [], state };
 
   const since = state.lastPollTimestamp || new Date().toISOString();

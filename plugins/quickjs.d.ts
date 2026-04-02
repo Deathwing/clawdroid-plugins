@@ -85,16 +85,86 @@ export interface ToolParam {
   required: boolean;
 }
 
+export interface TextBlock {
+  type: "text";
+  text: string;
+}
+
+export interface CodeBlock {
+  type: "code";
+  code: string;
+  language?: string;
+  path?: string;
+}
+
+export interface ImageBlock {
+  type: "image";
+  uri: string;
+  alt?: string;
+}
+
+export interface FileBlock {
+  type: "file";
+  path: string;
+  snippet?: string;
+}
+
+export interface TableBlock {
+  type: "table";
+  headers: string[];
+  rows: string[][];
+}
+
+export interface StatusBlock {
+  type: "status";
+  message: string;
+  isSuccess?: boolean;
+}
+
+export interface CardBlock {
+  type: "card";
+  cardType: string;
+  data: Record<string, unknown>;
+}
+
+export type ContentBlock =
+  | TextBlock
+  | CodeBlock
+  | ImageBlock
+  | FileBlock
+  | TableBlock
+  | StatusBlock
+  | CardBlock;
+
 /** Successful result shape returned from `execute()`. */
 export interface ToolResult {
+  /** Model-visible transcript text. Always include this even when returning rich blocks. */
   message: string;
   error?: boolean;
+  /** Optional collapsed summary shown in tool-call UI. */
+  summary?: string;
+  /** Optional semantic hint that message contains file contents for this path. */
+  contentPath?: string;
+  /** Optional native-rendered content blocks. */
+  blocks?: ContentBlock[];
 }
 
 /** Error result shape returned from `execute()`. */
 export interface ToolError {
   error: true;
   message: string;
+  summary?: string;
+  contentPath?: string;
+  blocks?: ContentBlock[];
+}
+
+/**
+ * Context passed to the optional transformToolResult() hook.
+ * This hook runs in a separate pure pass with no host bridge, no fetch access,
+ * and no async support, so it should only rewrite or decorate the returned result.
+ */
+export interface ToolResultTransformContext {
+  input: Record<string, unknown>;
 }
 
 // ─── Globals injected by JsPluginGlobals.kt ──────────────────────────────────

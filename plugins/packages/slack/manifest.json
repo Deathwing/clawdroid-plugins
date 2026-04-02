@@ -15,6 +15,16 @@
     "account_label": "Slack Bot",
     "help_text": "Enter your Slack Bot User OAuth Token (starts with xoxb-). Create one at api.slack.com/apps."
   },
+  "notifications": [
+    {
+      "app_type": "slack",
+      "module_type": "message",
+      "package_names": [
+        "com.Slack"
+      ],
+      "supports_direct_reply": true
+    }
+  ],
   "tools": [
     {
       "name": "slack_send_message",
@@ -68,6 +78,28 @@
           "user_prompt": "Show me all the Slack channels I have access to",
           "expected_tool_calls": {
             "slack_list_channels": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "slack_get_channel_info",
+      "description": "Get details about a Slack channel.",
+      "parameters": [
+        {
+          "name": "channel",
+          "type": "string",
+          "description": "Channel ID (e.g. C01234567)",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_channel_info",
+          "name": "Get Slack channel info",
+          "user_prompt": "Show me details about the Slack channel with ID C01234567",
+          "expected_tool_calls": {
+            "slack_get_channel_info": 1
           }
         }
       ]

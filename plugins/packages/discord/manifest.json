@@ -1,0 +1,269 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:discord",
+  "name": "Discord",
+  "description": "Send messages, manage channels, and interact with Discord servers",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "messaging",
+  "clawdroid_plugin": 1,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "api_key",
+    "account_label": "Discord Bot",
+    "help_text": "Paste your Discord bot token from the Developer Portal → Bot → Token.",
+    "help_url": "https://discord.com/developers/applications"
+  },
+  "notifications": [
+    {
+      "app_type": "discord",
+      "module_type": "message",
+      "package_names": [
+        "com.discord"
+      ],
+      "supports_direct_reply": true
+    }
+  ],
+  "tools": [
+    {
+      "name": "discord_send_message",
+      "description": "Send a message to a Discord channel.",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "type": "string",
+          "description": "The channel ID to send the message to",
+          "required": true
+        },
+        {
+          "name": "content",
+          "type": "string",
+          "description": "Message content (max 2000 characters)",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "send_discord_msg",
+          "name": "Send a Discord message",
+          "user_prompt": "Send 'Hello everyone!' to Discord channel 123456789",
+          "expected_tool_calls": {
+            "discord_send_message": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "discord_list_guilds",
+      "description": "List Discord servers (guilds) the bot is in.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "list_discord_servers",
+          "name": "List Discord servers",
+          "user_prompt": "Show me all Discord servers the bot is in",
+          "expected_tool_calls": {
+            "discord_list_guilds": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "discord_list_channels",
+      "description": "List channels in a Discord server.",
+      "parameters": [
+        {
+          "name": "guild_id",
+          "type": "string",
+          "description": "The server (guild) ID",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_discord_channels",
+          "name": "List Discord channels",
+          "user_prompt": "List all channels in the Discord server with ID 987654321",
+          "expected_tool_calls": {
+            "discord_list_channels": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "discord_read_messages",
+      "description": "Read recent messages from a Discord channel.",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "type": "string",
+          "description": "The channel ID",
+          "required": true
+        },
+        {
+          "name": "limit",
+          "type": "integer",
+          "description": "Number of messages to fetch. Default 20, max 100.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "read_discord_messages",
+          "name": "Read Discord messages",
+          "user_prompt": "Read the last 10 messages from Discord channel 123456789",
+          "expected_tool_calls": {
+            "discord_read_messages": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "discord_get_guild",
+      "description": "Get detailed info about a Discord server.",
+      "parameters": [
+        {
+          "name": "guild_id",
+          "type": "string",
+          "description": "The server (guild) ID",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_discord_server_info",
+          "name": "Get Discord server info",
+          "user_prompt": "Get details about the Discord server 987654321",
+          "expected_tool_calls": {
+            "discord_get_guild": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "discord_create_reaction",
+      "description": "Add a reaction to a message.",
+      "parameters": [
+        {
+          "name": "channel_id",
+          "type": "string",
+          "description": "The channel ID",
+          "required": true
+        },
+        {
+          "name": "message_id",
+          "type": "string",
+          "description": "The message ID",
+          "required": true
+        },
+        {
+          "name": "emoji",
+          "type": "string",
+          "description": "Emoji to react with (e.g. '👍' or 'custom_emoji:123456')",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "react_to_message",
+          "name": "React to a Discord message",
+          "user_prompt": "Add a thumbs up reaction to message 111 in channel 222",
+          "expected_tool_calls": {
+            "discord_create_reaction": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "discord_get_user",
+      "description": "Get the authenticated bot/user info.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "get_discord_user",
+          "name": "Get Discord user info",
+          "user_prompt": "Show me the Discord bot's user info",
+          "expected_tool_calls": {
+            "discord_get_user": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "discord_create_channel",
+      "description": "Create a new channel in a Discord server.",
+      "parameters": [
+        {
+          "name": "guild_id",
+          "type": "string",
+          "description": "The server (guild) ID",
+          "required": true
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Channel name",
+          "required": true
+        },
+        {
+          "name": "type",
+          "type": "integer",
+          "description": "Channel type: 0=text, 2=voice, 4=category, 13=stage, 15=forum. Default 0.",
+          "required": false
+        },
+        {
+          "name": "topic",
+          "type": "string",
+          "description": "Channel topic/description",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "create_discord_channel",
+          "name": "Create a Discord channel",
+          "user_prompt": "Create a new text channel called 'general-chat' in server 987654321",
+          "expected_tool_calls": {
+            "discord_create_channel": 1
+          }
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_type": "discord_message",
+      "name": "Discord Message",
+      "description": "Trigger when a message is posted in a Discord channel",
+      "icon_name": "discord",
+      "runtime": "node",
+      "worker_entrypoint": "worker.js",
+      "poll_interval_seconds": 2,
+      "variables": [
+        "author",
+        "content",
+        "channel_id",
+        "channel_name",
+        "message_id"
+      ],
+      "config_fields": [
+        {
+          "key": "channel_id",
+          "label": "Channel ID",
+          "type": "text",
+          "required": true,
+          "placeholder": "e.g. 123456789012345678"
+        },
+        {
+          "key": "from_user",
+          "label": "From User (optional)",
+          "type": "text",
+          "placeholder": "Filter by username"
+        }
+      ],
+      "prompt_placeholder": "e.g. Discord from {{author}} in #{{channel_name}}: {{content}}"
+    }
+  ]
+}

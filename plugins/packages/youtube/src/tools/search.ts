@@ -4,8 +4,21 @@
 import { ytGet } from "../api";
 import { required, optional } from "../params";
 import type { YtSearchListResponse } from "../types";
+import { clipText, pluralize, statusBlock, successResult, tableBlock } from "../result";
+import { channelUrl, playlistUrl, videoUrl } from "../urls";
 
-export async function search(token: string, input: Record<string, unknown>): Promise<string> {
+function itemKind(item: YtSearchListResponse["items"][number]): string {
+  if (item.id.videoId) return "video";
+  if (item.id.channelId) return "channel";
+  if (item.id.playlistId) return "playlist";
+  return "item";
+}
+
+function itemId(item: YtSearchListResponse["items"][number]): string {
+  return item.id.videoId || item.id.channelId || item.id.playlistId || "";
+}
+
+export async function search(token: string, input: Record<string, unknown>) {
   const query = required(input, "query");
   const type = optional(input, "type", "video");
   const maxResults = optional(input, "max_results", 10);
@@ -18,11 +31,18 @@ export async function search(token: string, input: Record<string, unknown>): Pro
   );
   const data = resp.json() as YtSearchListResponse;
 
-  if (!data.items || data.items.length === 0) return "No results found.";
+  if (!data.items || data.items.length === 0) {
+    return successResult(
+      "No results found.",
+      "No results found",
+      [statusBlock(`No ${type} results found for "${query}".`)],
+    );
+  }
 
   const lines: string[] = [
     `Search results for "${query}"${data.pageInfo ? ` (${data.pageInfo.totalResults}+ total)` : ""}:\n`,
   ];
+  const rows: string[][] = [];
 
   for (let i = 0; i < data.items.length; i++) {
     const item = data.items[i];
@@ -36,11 +56,11 @@ export async function search(token: string, input: Record<string, unknown>): Pro
     lines.push(`   Channel: ${snippet.channelTitle}${publishedAt ? ` | Published: ${publishedAt}` : ""}`);
 
     if (videoId) {
-      lines.push(`   ID: ${videoId} | https://www.youtube.com/watch?v=${videoId}`);
+      lines.push(`   ID: ${videoId} | ${videoUrl(videoId)}`);
     } else if (channelId) {
-      lines.push(`   Channel ID: ${channelId} | https://www.youtube.com/channel/${channelId}`);
+      lines.push(`   Channel ID: ${channelId} | ${channelUrl(channelId)}`);
     } else if (playlistId) {
-      lines.push(`   Playlist ID: ${playlistId} | https://www.youtube.com/playlist?list=${playlistId}`);
+      lines.push(`   Playlist ID: ${playlistId} | ${playlistUrl(playlistId)}`);
     }
 
     if (snippet.description) {
@@ -48,7 +68,25 @@ export async function search(token: string, input: Record<string, unknown>): Pro
       lines.push(`   ${desc}${snippet.description.length > 120 ? "..." : ""}`);
     }
     lines.push("");
+
+    rows.push([
+      String(i + 1),
+      itemKind(item),
+      clipText(snippet.title, 60),
+      clipText(snippet.channelTitle, 32),
+      publishedAt || "-",
+      itemId(item) || "-",
+    ]);
   }
 
-  return lines.join("\n").trim();
+  const count = data.items.length;
+  const summary = `${count} ${type} result${count === 1 ? "" : "s"} for "${query}"`;
+  return successResult(
+    lines.join("\n").trim(),
+    summary,
+    [
+      statusBlock(`Found ${count} ${pluralize(count, type)} for "${query}".`),
+      tableBlock(["#", "Kind", "Title", "Channel", "Published", "ID"], rows),
+    ],
+  );
 }

@@ -1,6 +1,7 @@
 // Copyright (c) 2026 Robert (Deathwing). All rights reserved.
 // Licensed under proprietary license. See LICENSE file in the project root.
 
+import type { PluginContext } from "../../../../quickjs.d";
 import { graphGet } from "../api";
 
 interface TriggerEvent {
@@ -11,21 +12,12 @@ interface TriggerEvent {
   event_id: string;
 }
 
-declare const host: {
-  getSecret(key: string): Promise<string | null>;
-  httpFetch(
-    url: string,
-    method: string,
-    headersJson: string,
-    body?: string | null,
-  ): Promise<{ status: number; body: string; json(): any }>;
-};
-
 export async function checkCalendarTrigger(
   config: Record<string, unknown>,
   state: Record<string, unknown>,
+  ctx: PluginContext,
 ): Promise<{ events: TriggerEvent[]; state: Record<string, unknown> }> {
-  const token = await host.getSecret("token");
+  const token = await ctx.host.getSecret("token");
   if (!token) return { events: [], state };
 
   const minutesBefore = Math.max(1, Math.min(60, parseInt(String(config.minutes_before || "10"), 10) || 10));

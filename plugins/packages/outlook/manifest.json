@@ -29,6 +29,15 @@
     "account_label": "Microsoft",
     "help_text": "Sign in with your Microsoft account to use Outlook Mail, Calendar, and Teams tools."
   },
+  "notifications": [
+    {
+      "app_type": "outlook",
+      "module_type": "email",
+      "package_names": [
+        "com.microsoft.office.outlook"
+      ]
+    }
+  ],
   "tools": [
     {
       "name": "outlook_send_mail",

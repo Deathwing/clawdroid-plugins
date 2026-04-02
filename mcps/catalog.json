@@ -27,6 +27,32 @@
       "icon_url": null
     },
     {
+      "id": "cclsp",
+      "name": "CCLSP",
+      "description": "LSP-backed code intelligence for definitions, references, symbol usages, rename, and diagnostics across Kotlin, Java, TypeScript, Python, and more. Requires a cclsp.json config and language servers.",
+      "author": "ktnyt",
+      "category": "development",
+      "transport": "node-stdio",
+      "command": "npx -y cclsp",
+      "args_hint": "Run npx cclsp@latest setup --user (or setup), then set CCLSP_CONFIG_PATH to the generated cclsp.json.",
+      "env": { "CCLSP_CONFIG_PATH": "" },
+      "featured": true,
+      "icon_url": null
+    },
+    {
+      "id": "mcp-lsp",
+      "name": "MCP LSP",
+      "description": "Multi-language LSP bridge for workspace symbols, definitions, references, implementations, call hierarchy, and diagnostics. Good fit for Kotlin and Java repositories with external language servers.",
+      "author": "Axivo",
+      "category": "development",
+      "transport": "node-stdio",
+      "command": "npx -y @axivo/mcp-lsp",
+      "args_hint": "Create an lsp.json server config first, then set LSP_FILE_PATH to that file.",
+      "env": { "LSP_FILE_PATH": "" },
+      "featured": true,
+      "icon_url": null
+    },
+    {
       "id": "brave-search",
       "name": "Brave Search",
       "description": "Web and local search powered by Brave Search API",

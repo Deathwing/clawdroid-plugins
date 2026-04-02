@@ -13,6 +13,7 @@ import { search } from "./tools/search";
 import { getVideo, rateVideo } from "./tools/videos";
 import { listMyPlaylists, getPlaylistItems, addToPlaylist, createPlaylist, removeFromPlaylist } from "./tools/playlists";
 import { getChannel, listSubscriptions } from "./tools/channels";
+import { errorResult } from "./result";
 
 type ToolInput = Record<string, unknown>;
 
@@ -32,11 +33,14 @@ export async function execute(
 ): Promise<ToolResult | ToolError> {
   const token = await ctx.host.getSecret("token");
   if (!token) {
-    return { error: true, message: "YouTube not connected. Connect in Settings → Plugins → YouTube first." };
+    return errorResult(
+      "YouTube not connected. Connect in Settings → Plugins → YouTube first.",
+      "YouTube connection required",
+    );
   }
 
   try {
-    let result: string;
+    let result: ToolResult;
     switch (toolName) {
       case "youtube_search":
         result = await search(token, input);
@@ -69,11 +73,11 @@ export async function execute(
         result = await listSubscriptions(token, input);
         break;
       default:
-        return { error: true, message: `Unknown YouTube tool: ${toolName}` };
+        return errorResult(`Unknown YouTube tool: ${toolName}`, "Unsupported YouTube tool");
     }
-    return { message: result };
+    return result;
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    return { error: true, message: msg };
+    return errorResult(msg, "YouTube request failed");
   }
 }

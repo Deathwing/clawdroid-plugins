@@ -1,0 +1,391 @@
+{
+  "$schema": "../../manifest.schema.json",
+  "id": "builtin:google",
+  "name": "Google Workspace",
+  "description": "Gmail, Google Calendar, and Google Chat tools via Google Workspace APIs",
+  "version": "1.0.0",
+  "author": "Robert (Deathwing)",
+  "category": "productivity",
+  "clawdroid_plugin": 1,
+  "type": "tool",
+  "runtime": "embedded_js",
+  "entrypoint": "index.js",
+  "auth": {
+    "type": "oauth2",
+    "authorize_url": "https://accounts.google.com/o/oauth2/v2/auth",
+    "token_url": "https://clawdroid-proxy.clawdroid.workers.dev/oauth/google/token",
+    "client_id": "4564009598-a8n37hgsv078naf1nf6ven89uhab24pl.apps.googleusercontent.com",
+    "redirect_uri": "https://clawdroid-proxy.clawdroid.workers.dev/oauth/callback",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/gmail.send",
+      "https://www.googleapis.com/auth/calendar.events",
+      "https://www.googleapis.com/auth/chat.spaces.readonly",
+      "https://www.googleapis.com/auth/chat.messages.create"
+    ],
+    "pkce": true,
+    "authorize_params": {
+      "access_type": "offline",
+      "prompt": "consent",
+      "include_granted_scopes": "true"
+    },
+    "refresh": true,
+    "account_label": "Google",
+    "help_text": "Requires a Google Cloud OAuth web client. Enable the Gmail API, Google Calendar API, and Google Chat API, set the authorized redirect URI to https://clawdroid-proxy.clawdroid.workers.dev/oauth/callback, replace client_id in this manifest with that web client ID, and configure GOOGLE_OAUTH_WEB_CLIENT_ID plus GOOGLE_OAUTH_WEB_CLIENT_SECRET on the backend with the same client."
+  },
+  "notifications": [
+    {
+      "app_type": "gmail",
+      "module_type": "email",
+      "package_names": [
+        "com.google.android.gm"
+      ]
+    }
+  ],
+  "tools": [
+    {
+      "name": "gmail_send_email",
+      "description": "Send an email via Gmail.",
+      "parameters": [
+        {
+          "name": "to",
+          "type": "string",
+          "description": "Recipient email address",
+          "required": true
+        },
+        {
+          "name": "subject",
+          "type": "string",
+          "description": "Email subject",
+          "required": true
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "description": "Email body (plain text)",
+          "required": true
+        },
+        {
+          "name": "cc",
+          "type": "string",
+          "description": "CC addresses (comma-separated)",
+          "required": false
+        },
+        {
+          "name": "bcc",
+          "type": "string",
+          "description": "BCC addresses (comma-separated)",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "send_gmail",
+          "name": "Send a Gmail email",
+          "user_prompt": "Send an email via Gmail to alice@example.com with subject 'Project update' and body 'Here is the latest update'",
+          "expected_tool_calls": {
+            "gmail_send_email": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gmail_search",
+      "description": "Search emails in Gmail.",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "string",
+          "description": "Gmail search query (for example 'from:user@example.com is:unread')",
+          "required": true
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum results to return. Default 10.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "search_gmail",
+          "name": "Search Gmail",
+          "user_prompt": "Search for unread emails from bob@example.com in Gmail",
+          "expected_tool_calls": {
+            "gmail_search": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gmail_read_email",
+      "description": "Read a specific email by ID.",
+      "parameters": [
+        {
+          "name": "message_id",
+          "type": "string",
+          "description": "The Gmail message ID",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "read_gmail_message",
+          "name": "Read a Gmail email",
+          "user_prompt": "Read the Gmail email with ID 'msg123'",
+          "expected_tool_calls": {
+            "gmail_read_email": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gmail_list_labels",
+      "description": "List all Gmail labels.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "list_gmail_labels",
+          "name": "List Gmail labels",
+          "user_prompt": "Show me all my Gmail labels",
+          "expected_tool_calls": {
+            "gmail_list_labels": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gcalendar_list_events",
+      "description": "List upcoming Google Calendar events.",
+      "parameters": [
+        {
+          "name": "calendar_id",
+          "type": "string",
+          "description": "Calendar ID. Default 'primary'.",
+          "required": false
+        },
+        {
+          "name": "max_results",
+          "type": "integer",
+          "description": "Maximum events to return. Default 10.",
+          "required": false
+        },
+        {
+          "name": "time_min",
+          "type": "string",
+          "description": "Start time in RFC3339 (for example 2024-01-01T00:00:00Z)",
+          "required": false
+        },
+        {
+          "name": "time_max",
+          "type": "string",
+          "description": "End time in RFC3339",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "list_gcal_events",
+          "name": "List Google Calendar events",
+          "user_prompt": "Show me my upcoming Google Calendar events for this week",
+          "expected_tool_calls": {
+            "gcalendar_list_events": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gcalendar_create_event",
+      "description": "Create a Google Calendar event.",
+      "parameters": [
+        {
+          "name": "summary",
+          "type": "string",
+          "description": "Event title",
+          "required": true
+        },
+        {
+          "name": "start_time",
+          "type": "string",
+          "description": "Start time in RFC3339 (for example 2024-01-15T10:00:00-05:00)",
+          "required": true
+        },
+        {
+          "name": "end_time",
+          "type": "string",
+          "description": "End time in RFC3339",
+          "required": true
+        },
+        {
+          "name": "description",
+          "type": "string",
+          "description": "Event description",
+          "required": false
+        },
+        {
+          "name": "location",
+          "type": "string",
+          "description": "Event location",
+          "required": false
+        },
+        {
+          "name": "calendar_id",
+          "type": "string",
+          "description": "Calendar ID. Default 'primary'.",
+          "required": false
+        },
+        {
+          "name": "attendees",
+          "type": "string",
+          "description": "Comma-separated email addresses of attendees",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "create_gcal_event",
+          "name": "Create a Google Calendar event",
+          "user_prompt": "Create a Google Calendar event called 'Lunch with team' tomorrow from 12pm to 1pm at 'Downtown Cafe'",
+          "expected_tool_calls": {
+            "gcalendar_create_event": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gcalendar_get_event",
+      "description": "Get details of a specific calendar event.",
+      "parameters": [
+        {
+          "name": "event_id",
+          "type": "string",
+          "description": "The calendar event ID",
+          "required": true
+        },
+        {
+          "name": "calendar_id",
+          "type": "string",
+          "description": "Calendar ID. Default 'primary'.",
+          "required": false
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "get_gcal_event",
+          "name": "Get a calendar event",
+          "user_prompt": "Get the details of Google Calendar event 'evt123'",
+          "expected_tool_calls": {
+            "gcalendar_get_event": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gchat_list_spaces",
+      "description": "List Google Chat spaces the user is a member of.",
+      "parameters": [],
+      "test_cases": [
+        {
+          "id": "list_gchat_spaces",
+          "name": "List Google Chat spaces",
+          "user_prompt": "Show me my Google Chat spaces",
+          "expected_tool_calls": {
+            "gchat_list_spaces": 1
+          }
+        }
+      ]
+    },
+    {
+      "name": "gchat_send_message",
+      "description": "Send a message to a Google Chat space.",
+      "parameters": [
+        {
+          "name": "space_id",
+          "type": "string",
+          "description": "The space name or ID (for example 'spaces/AAAA')",
+          "required": true
+        },
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Message text",
+          "required": true
+        }
+      ],
+      "test_cases": [
+        {
+          "id": "send_gchat_message",
+          "name": "Send a Google Chat message",
+          "user_prompt": "Send 'Meeting at 3pm' to Google Chat space 'spaces/AAAA'",
+          "expected_tool_calls": {
+            "gchat_send_message": 1
+          }
+        }
+      ]
+    }
+  ],
+  "triggers": [
+    {
+      "trigger_type": "gmail_received",
+      "name": "Gmail Received",
+      "description": "Trigger when a new email arrives in Gmail",
+      "icon_name": "email",
+      "poll_interval_seconds": 60,
+      "variables": [
+        "from",
+        "subject",
+        "snippet",
+        "message_id",
+        "timestamp"
+      ],
+      "config_fields": [
+        {
+          "key": "from_filter",
+          "label": "From (optional)",
+          "type": "text",
+          "placeholder": "e.g. boss@company.com",
+          "required": false
+        },
+        {
+          "key": "subject_filter",
+          "label": "Subject contains (optional)",
+          "type": "text",
+          "placeholder": "e.g. urgent",
+          "required": false
+        }
+      ],
+      "prompt_placeholder": "e.g. New email from {{from}}: {{subject}}"
+    },
+    {
+      "trigger_type": "gcalendar_event_starting",
+      "name": "Calendar Event Starting",
+      "description": "Trigger before a Google Calendar event starts",
+      "icon_name": "calendar_today",
+      "poll_interval_seconds": 60,
+      "variables": [
+        "event_title",
+        "start_time",
+        "end_time",
+        "location",
+        "event_id"
+      ],
+      "config_fields": [
+        {
+          "key": "minutes_before",
+          "label": "Minutes before event",
+          "type": "text",
+          "placeholder": "10",
+          "required": false
+        },
+        {
+          "key": "calendar_id",
+          "label": "Calendar ID (optional)",
+          "type": "text",
+          "placeholder": "primary",
+          "required": false
+        }
+      ],
+      "prompt_placeholder": "e.g. Upcoming event: {{event_title}} at {{start_time}}"
+    }
+  ]
+}

@@ -73,7 +73,11 @@ declare global {
    *
    * Common fields (all triggers):
    *   - `__vars.triggerId`   — automation ID
+  *   - `__vars.automationId` — automation ID
+  *   - `__vars.automationName` — automation name
+  *   - `__vars.automationType` — `agent` or `script`
    *   - `__vars.triggerType` — e.g. "schedule", "sms_received", "notification"
+  *   - `__vars.invocationSource` — `trigger` or `manual`
    *
    * SMS trigger additional fields:
    *   - `__vars.sender`  — phone number of the sender

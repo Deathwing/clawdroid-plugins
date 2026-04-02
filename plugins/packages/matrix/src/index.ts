@@ -16,6 +16,7 @@ import type { PluginContext, ToolResult, ToolError } from "../../../quickjs.d";
 import { parseCredential, matrixGet } from "./api";
 import { listRooms, joinRoom, getRoomInfo } from "./tools/rooms";
 import { sendMessage, readRoom, getProfile } from "./tools/messages";
+import { errorResult } from "./result";
 
 type ToolInput = Record<string, unknown>;
 
@@ -34,7 +35,10 @@ export async function execute(
 ): Promise<ToolResult | ToolError> {
   const raw = await ctx.host.getSecret("token");
   if (!raw) {
-    return { error: true, message: "Matrix not connected. Add your credentials in Settings first." };
+    return errorResult(
+      "Matrix not connected. Add your credentials in Settings first.",
+      "Matrix connection required",
+    );
   }
 
   let homeserver: string;
@@ -44,44 +48,49 @@ export async function execute(
     homeserver = cred.homeserver;
     token = cred.token;
   } catch (e: any) {
-    return { error: true, message: e.message || "Invalid Matrix credential format" };
+    return errorResult(e.message || "Invalid Matrix credential format", "Invalid Matrix credential");
   }
 
-  let result: string;
-  switch (toolName) {
-    case "matrix_send_message":
-      result = await sendMessage(
-        homeserver,
-        token,
-        String(input.room_id || ""),
-        String(input.text || ""),
-      );
-      break;
-    case "matrix_list_rooms":
-      result = await listRooms(homeserver, token);
-      break;
-    case "matrix_read_room":
-      result = await readRoom(
-        homeserver,
-        token,
-        String(input.room_id || ""),
-        input.limit ? Number(input.limit) : undefined,
-      );
-      break;
-    case "matrix_join_room":
-      result = await joinRoom(homeserver, token, String(input.room_id_or_alias || ""));
-      break;
-    case "matrix_get_room_info":
-      result = await getRoomInfo(homeserver, token, String(input.room_id || ""));
-      break;
-    case "matrix_get_profile":
-      result = await getProfile(homeserver, token, String(input.user_id || ""));
-      break;
-    default:
-      return { error: true, message: `Unknown Matrix tool: ${toolName}` };
-  }
+  try {
+    let result: ToolResult;
+    switch (toolName) {
+      case "matrix_send_message":
+        result = await sendMessage(
+          homeserver,
+          token,
+          String(input.room_id || ""),
+          String(input.text || ""),
+        );
+        break;
+      case "matrix_list_rooms":
+        result = await listRooms(homeserver, token);
+        break;
+      case "matrix_read_room":
+        result = await readRoom(
+          homeserver,
+          token,
+          String(input.room_id || ""),
+          input.limit ? Number(input.limit) : undefined,
+        );
+        break;
+      case "matrix_join_room":
+        result = await joinRoom(homeserver, token, String(input.room_id_or_alias || ""));
+        break;
+      case "matrix_get_room_info":
+        result = await getRoomInfo(homeserver, token, String(input.room_id || ""));
+        break;
+      case "matrix_get_profile":
+        result = await getProfile(homeserver, token, String(input.user_id || ""));
+        break;
+      default:
+        return errorResult(`Unknown Matrix tool: ${toolName}`, "Unsupported Matrix tool");
+    }
 
-  return { message: result };
+    return result;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return errorResult(message, "Matrix request failed");
+  }
 }
 
 // ─── Trigger Exports ────────────────────────────────────────

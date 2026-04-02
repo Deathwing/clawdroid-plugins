@@ -71,17 +71,20 @@ describe("discoverTools", () => {
 describe("execute", () => {
   it("returns error when no token", async () => {
     const result = await execute("youtube_search", {}, mockCtx(null));
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       error: true,
       message: "YouTube not connected. Connect in Settings → Plugins → YouTube first.",
+      summary: "YouTube connection required",
     });
+    expect((result as any).blocks?.[0]).toMatchObject({ type: "status", isSuccess: false });
   });
 
   it("returns error for unknown tool", async () => {
     const result = await execute("youtube_nonexistent", {}, mockCtx());
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       error: true,
       message: "Unknown YouTube tool: youtube_nonexistent",
+      summary: "Unsupported YouTube tool",
     });
   });
 
@@ -105,12 +108,18 @@ describe("execute", () => {
     const result = await execute("youtube_search", { query: "test" }, mockCtx());
     expect((result as any).message).toContain("Test Video");
     expect((result as any).message).toContain("abc123");
+    expect((result as any).summary).toBe('1 video result for "test"');
+    expect((result as any).blocks?.[1]).toMatchObject({
+      type: "table",
+      headers: ["#", "Kind", "Title", "Channel", "Published", "ID"],
+    });
   });
 
   it("youtube_search returns empty message when no results", async () => {
     mockFetch.mockResolvedValue(jsonResp({ items: [] }));
     const result = await execute("youtube_search", { query: "noresults" }, mockCtx());
     expect((result as any).message).toBe("No results found.");
+    expect((result as any).summary).toBe("No results found");
   });
 
   it("youtube_search throws when query is missing", async () => {
@@ -142,6 +151,11 @@ describe("execute", () => {
     expect((result as any).message).toContain("My Video");
     expect((result as any).message).toContain("4:30");
     expect((result as any).message).toContain("1,000,000");
+    expect((result as any).summary).toBe("Video: My Video");
+    expect((result as any).blocks?.[1]).toMatchObject({
+      type: "table",
+      headers: ["Field", "Value"],
+    });
   });
 
   it("youtube_get_video returns not-found message for empty items", async () => {
@@ -162,6 +176,8 @@ describe("execute", () => {
     mockFetch.mockResolvedValue({ ok: true, status: 204, text: () => "", json: () => ({}) });
     const result = await execute("youtube_rate_video", { video_id: "abc123", rating: "like" }, mockCtx());
     expect((result as any).message).toContain("Liked video abc123");
+    expect((result as any).summary).toBe("Liked video abc123");
+    expect((result as any).blocks?.[0]).toMatchObject({ type: "status", isSuccess: true });
   });
 
   it("dispatches youtube_rate_video (none — remove)", async () => {
@@ -194,6 +210,11 @@ describe("execute", () => {
     expect((result as any).message).toContain("Favourites");
     expect((result as any).message).toContain("PLtest");
     expect((result as any).message).toContain("12 videos");
+    expect((result as any).summary).toBe("1 playlist found");
+    expect((result as any).blocks?.[1]).toMatchObject({
+      type: "table",
+      headers: ["#", "Title", "Videos", "Privacy", "ID"],
+    });
   });
 
   it("youtube_list_my_playlists returns empty message", async () => {
@@ -241,6 +262,7 @@ describe("execute", () => {
     const result = await execute("youtube_create_playlist", { title: "My New Playlist" }, mockCtx());
     expect((result as any).message).toContain("My New Playlist");
     expect((result as any).message).toContain("PLnew");
+    expect((result as any).summary).toBe("Created playlist My New Playlist");
   });
 
   it("youtube_create_playlist returns error for invalid privacy", async () => {
@@ -272,6 +294,7 @@ describe("execute", () => {
     const result = await execute("youtube_get_channel", { channel_id: "UCtest" }, mockCtx());
     expect((result as any).message).toContain("Test Channel");
     expect((result as any).message).toContain("100,000");
+    expect((result as any).summary).toBe("Channel: Test Channel");
   });
 
   it("youtube_get_channel returns not-found for missing channel", async () => {
@@ -297,6 +320,7 @@ describe("execute", () => {
     const result = await execute("youtube_list_subscriptions", {}, mockCtx());
     expect((result as any).message).toContain("Subscribed Channel");
     expect((result as any).message).toContain("UCsub123");
+    expect((result as any).summary).toBe("1 subscription found");
   });
 
   it("youtube_list_subscriptions returns empty message", async () => {

@@ -17,8 +17,19 @@ import { slackGet } from "./api";
 import { listChannels, readChannel, readChannelRaw, getChannelInfo } from "./tools/channels";
 import { sendMessage, searchMessages, addReaction } from "./tools/messages";
 import { listUsers, getUser } from "./tools/users";
+import { errorResult, failureResult, keyValueTable, statusBlock, successResult } from "./result";
 
 type ToolInput = Record<string, unknown>;
+type NotificationPayload = {
+  packageName: string;
+  appName?: string;
+  title?: string;
+  text?: string;
+  bigText?: string;
+  conversationTitle?: string;
+  timestamp?: number;
+  messages?: Array<{ sender?: string; text?: string }>;
+};
 
 /** Tool definitions are declared in manifest.json */
 export function discoverTools(): [] {
@@ -35,69 +46,92 @@ export async function execute(
 ): Promise<ToolResult | ToolError> {
   const token = await ctx.host.getSecret("token");
   if (!token) {
-    return { error: true, message: "Slack not connected. Add your bot token in Settings first." };
+    return errorResult(
+      "Slack not connected. Add your bot token in Settings first.",
+      "Slack connection required",
+    );
   }
 
-  let result: string;
-  switch (toolName) {
-    case "slack_send_message":
-      result = await sendMessage(
-        token,
-        String(input.channel || ""),
-        String(input.text || ""),
-        input.thread_ts ? String(input.thread_ts) : undefined,
-      );
-      break;
-    case "slack_list_channels":
-      result = await listChannels(token, input.limit ? Number(input.limit) : undefined);
-      break;
-    case "slack_read_channel":
-      result = await readChannel(
-        token,
-        String(input.channel || ""),
-        input.limit ? Number(input.limit) : undefined,
-      );
-      break;
-    case "slack_list_users":
-      result = await listUsers(token, input.limit ? Number(input.limit) : undefined);
-      break;
-    case "slack_get_user":
-      result = await getUser(token, String(input.user_id || ""));
-      break;
-    case "slack_search_messages":
-      result = await searchMessages(
-        token,
-        String(input.query || ""),
-        input.limit ? Number(input.limit) : undefined,
-      );
-      break;
-    case "slack_add_reaction":
-      result = await addReaction(
-        token,
-        String(input.channel || ""),
-        String(input.timestamp || ""),
-        String(input.emoji || ""),
-      );
-      break;
-    case "slack_auth_test": {
-      const resp = await slackGet(token, "auth.test");
-      if (!resp.ok) {
-        result = `Error ${resp.status}: ${resp.text()}`;
-      } else {
-        const data = resp.json();
-        if (!data.ok) {
-          result = `Slack API error: ${data.error}`;
+  try {
+    let result: ToolResult;
+    switch (toolName) {
+      case "slack_send_message":
+        result = await sendMessage(
+          token,
+          String(input.channel || ""),
+          String(input.text || ""),
+          input.thread_ts ? String(input.thread_ts) : undefined,
+        );
+        break;
+      case "slack_list_channels":
+        result = await listChannels(token, input.limit ? Number(input.limit) : undefined);
+        break;
+      case "slack_get_channel_info":
+        result = await getChannelInfo(token, String(input.channel || ""));
+        break;
+      case "slack_read_channel":
+        result = await readChannel(
+          token,
+          String(input.channel || ""),
+          input.limit ? Number(input.limit) : undefined,
+        );
+        break;
+      case "slack_list_users":
+        result = await listUsers(token, input.limit ? Number(input.limit) : undefined);
+        break;
+      case "slack_get_user":
+        result = await getUser(token, String(input.user_id || ""));
+        break;
+      case "slack_search_messages":
+        result = await searchMessages(
+          token,
+          String(input.query || ""),
+          input.limit ? Number(input.limit) : undefined,
+        );
+        break;
+      case "slack_add_reaction":
+        result = await addReaction(
+          token,
+          String(input.channel || ""),
+          String(input.timestamp || ""),
+          String(input.emoji || ""),
+        );
+        break;
+      case "slack_auth_test": {
+        const resp = await slackGet(token, "auth.test");
+        if (!resp.ok) {
+          result = failureResult(`Error ${resp.status}: ${resp.text()}`, "Slack request failed");
         } else {
-          result = JSON.stringify({ team: data.team, user: data.user, url: data.url }, null, 2);
+          const data = resp.json();
+          if (!data.ok) {
+            result = failureResult(`Slack API error: ${data.error}`, "Slack request failed");
+          } else {
+            const message = [
+              `Workspace: ${data.team || "unknown"}`,
+              `User: ${data.user || "unknown"}`,
+              `URL: ${data.url || "?"}`,
+            ].join("\n");
+            result = successResult(message, `Slack workspace ${data.team || "unknown"}`, [
+              statusBlock(`Connected to Slack workspace ${data.team || "unknown"}.`),
+              keyValueTable([
+                ["Workspace", data.team || "unknown"],
+                ["User", data.user || "unknown"],
+                ["URL", data.url || ""],
+              ]),
+            ]);
+          }
         }
+        break;
       }
-      break;
+      default:
+        return errorResult(`Unknown Slack tool: ${toolName}`, "Unsupported Slack tool");
     }
-    default:
-      return { error: true, message: `Unknown Slack tool: ${toolName}` };
-  }
 
-  return { message: result };
+    return result;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return errorResult(message, "Slack request failed");
+  }
 }
 
 // ─── Trigger Exports ────────────────────────────────────────
@@ -173,4 +207,31 @@ export function buildConfig(
   const cfg: Record<string, string> = {};
   if (input.channel) cfg.channel = String(input.channel);
   return cfg;
+}
+
+export function parseNotification(
+  _appType: string,
+  notification: NotificationPayload,
+): Record<string, string> | null {
+  const title = notification.title?.trim();
+  const text = notification.text?.trim();
+  if (!title || !text) {
+    return null;
+  }
+
+  const senderMatch = /^(.+?):\s*(.+)$/.exec(text);
+  if (senderMatch) {
+    return {
+      moduleType: "message",
+      sender: senderMatch[1].trim(),
+      text: senderMatch[2].trim(),
+      groupName: title.startsWith("#") ? title : "",
+    };
+  }
+
+  return {
+    moduleType: "message",
+    sender: title,
+    text,
+  };
 }

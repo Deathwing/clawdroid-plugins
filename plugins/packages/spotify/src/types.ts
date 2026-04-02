@@ -3,6 +3,14 @@
 
 /** Spotify API response types */
 
+export interface SpotifyExternalUrls {
+  spotify?: string;
+}
+
+export interface SpotifyFollowers {
+  total: number;
+}
+
 export interface SpotifyImage {
   url: string;
   height: number | null;
@@ -14,19 +22,23 @@ export interface SpotifyArtist {
   name: string;
   genres?: string[];
   popularity?: number;
-  followers?: { total: number };
-  external_urls: { spotify: string };
+  followers?: SpotifyFollowers;
+  external_urls?: SpotifyExternalUrls;
+  uri?: string;
 }
 
 export interface SpotifyAlbum {
   id: string;
   name: string;
-  album_type: string;
+  album_type?: string;
   artists: SpotifyArtist[];
-  release_date: string;
-  total_tracks: number;
-  images: SpotifyImage[];
-  external_urls: { spotify: string };
+  release_date?: string;
+  total_tracks?: number;
+  images?: SpotifyImage[];
+  external_urls?: SpotifyExternalUrls;
+  label?: string;
+  popularity?: number;
+  uri?: string;
 }
 
 export interface SpotifyTrack {
@@ -35,23 +47,27 @@ export interface SpotifyTrack {
   artists: SpotifyArtist[];
   album: SpotifyAlbum;
   duration_ms: number;
-  track_number: number;
-  popularity: number;
-  explicit: boolean;
+  track_number?: number;
+  disc_number?: number;
+  popularity?: number;
+  explicit?: boolean;
   uri: string;
-  external_urls: { spotify: string };
+  external_urls?: SpotifyExternalUrls;
+  preview_url?: string | null;
 }
 
 export interface SpotifyPlaylist {
   id: string;
   name: string;
   description: string | null;
-  owner: { id: string; display_name: string };
-  public: boolean;
-  tracks: { total: number };
-  images: SpotifyImage[];
-  external_urls: { spotify: string };
-  uri: string;
+  owner: { id?: string; display_name?: string };
+  public?: boolean;
+  followers?: SpotifyFollowers;
+  tracks?: { total: number };
+  items?: { total: number; items?: SpotifyPlaylistTrackItem[] };
+  images?: SpotifyImage[];
+  external_urls?: SpotifyExternalUrls;
+  uri?: string;
 }
 
 export interface SpotifyDevice {
@@ -75,9 +91,9 @@ export interface SpotifyPlaybackState {
 export interface SpotifyPaging<T> {
   items: T[];
   total: number;
-  limit: number;
-  offset: number;
-  next: string | null;
+  limit?: number;
+  offset?: number;
+  next?: string | null;
 }
 
 export interface SpotifySearchResult {
@@ -95,4 +111,16 @@ export interface SpotifyQueue {
 export interface SpotifyPlayHistory {
   track: SpotifyTrack;
   played_at: string;
+}
+
+export interface SpotifyPlaylistTrackItem {
+  added_at?: string;
+  item?: SpotifyTrack | null;
+  track?: SpotifyTrack | null;
+}
+
+export interface SpotifyPlaylistDetails extends SpotifyPlaylist {
+  followers?: SpotifyFollowers;
+  tracks?: SpotifyPaging<SpotifyPlaylistTrackItem>;
+  items?: SpotifyPaging<SpotifyPlaylistTrackItem>;
 }

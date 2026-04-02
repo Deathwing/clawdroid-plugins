@@ -21,7 +21,7 @@ vi.stubGlobal("console", { log: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: v
 
 // ─── Import after global mocks ─────────────────────────
 
-import { discoverTools, execute, matchEvent, formatLabel, buildConfig } from "../index";
+import { discoverTools, execute, checkTrigger, matchEvent, formatLabel, buildConfig } from "../index";
 import { required, optional } from "../params";
 
 function mockCtx(token: string | null = "ghp_test123") {
@@ -83,19 +83,22 @@ describe("discoverTools", () => {
 // ─── execute ────────────────────────────────────────────
 
 describe("execute", () => {
-  it("returns error when no token", async () => {
+  it("returns structured error when no token", async () => {
     const result = await execute("github_get_user", {}, mockCtx(null));
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       error: true,
       message: "GitHub not connected. Connect in Settings first.",
+      summary: "GitHub connection required",
     });
+    expect((result as any).blocks?.[0]).toMatchObject({ type: "status", isSuccess: false });
   });
 
-  it("returns error for unknown tool", async () => {
+  it("returns structured error for unknown tool", async () => {
     const result = await execute("github_nonexistent", {}, mockCtx());
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       error: true,
       message: "Unknown GitHub tool: github_nonexistent",
+      summary: "Unsupported GitHub tool",
     });
   });
 
@@ -106,14 +109,18 @@ describe("execute", () => {
     const result = await execute("github_get_user", {}, mockCtx());
     expect(result).toHaveProperty("message");
     expect((result as any).message).toContain("testuser");
+    expect((result as any).summary).toBe("GitHub user testuser");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
-  it("dispatches github_list_repos correctly", async () => {
+  it("dispatches github_list_repos with summary table", async () => {
     mockFetch.mockResolvedValue(
       jsonResp([{ full_name: "user/repo", private: false, stargazers_count: 10, description: "A repo" }]),
     );
     const result = await execute("github_list_repos", {}, mockCtx());
     expect((result as any).message).toContain("user/repo");
+    expect((result as any).summary).toBe("1 repository found");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches github_get_repo with owner/repo params", async () => {
@@ -126,6 +133,8 @@ describe("execute", () => {
     );
     const result = await execute("github_get_repo", { owner: "octocat", repo: "hello" }, mockCtx());
     expect((result as any).message).toContain("octocat/hello");
+    expect((result as any).summary).toBe("Repository octocat/hello");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches github_search_repos", async () => {
@@ -134,6 +143,7 @@ describe("execute", () => {
     );
     const result = await execute("github_search_repos", { query: "test" }, mockCtx());
     expect((result as any).message).toContain("test/repo");
+    expect((result as any).summary).toBe('1 repository found for "test"');
   });
 
   it("dispatches github_list_issues", async () => {
@@ -144,14 +154,18 @@ describe("execute", () => {
     );
     const result = await execute("github_list_issues", { owner: "o", repo: "r" }, mockCtx());
     expect((result as any).message).toContain("#1 Bug");
+    expect((result as any).summary).toBe("1 issue found");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
   });
 
   it("dispatches github_create_issue", async () => {
     mockFetch.mockResolvedValue(
-      jsonResp({ number: 42, html_url: "https://github.com/o/r/issues/42" }),
+      jsonResp({ number: 42, title: "New", html_url: "https://github.com/o/r/issues/42" }),
     );
     const result = await execute("github_create_issue", { owner: "o", repo: "r", title: "New" }, mockCtx());
     expect((result as any).message).toContain("#42");
+    expect((result as any).summary).toBe("Issue created");
+    expect((result as any).blocks[0]).toMatchObject({ type: "status", isSuccess: true });
   });
 
   it("dispatches github_list_branches", async () => {
@@ -160,6 +174,7 @@ describe("execute", () => {
     );
     const result = await execute("github_list_branches", { owner: "o", repo: "r" }, mockCtx());
     expect((result as any).message).toContain("main");
+    expect((result as any).summary).toBe("1 branch found");
   });
 
   it("dispatches github_search_code", async () => {
@@ -168,6 +183,69 @@ describe("execute", () => {
     );
     const result = await execute("github_search_code", { query: "function" }, mockCtx());
     expect((result as any).message).toContain("test.js");
+    expect((result as any).summary).toBe("1 code match found");
+    expect((result as any).blocks[1]).toMatchObject({ type: "table" });
+  });
+
+  it("keeps github_get_file_contents plain text but adds a summary", async () => {
+    mockFetch.mockResolvedValue(
+      jsonResp({ type: "file", content: btoa("console.log('hi')") }),
+    );
+    const result = await execute(
+      "github_get_file_contents",
+      { owner: "o", repo: "r", path: "src/test.js" },
+      mockCtx(),
+    );
+    expect((result as any).message).toContain("console.log('hi')");
+    expect((result as any).summary).toBe("File src/test.js");
+    expect((result as any).contentPath).toBe("src/test.js");
+    expect((result as any).blocks).toBeUndefined();
+  });
+});
+
+// ─── checkTrigger ──────────────────────────────────────
+
+describe("checkTrigger", () => {
+  it("uses the passed plugin context for notification polling", async () => {
+    const ctx = mockCtx();
+    mockHost.getSecret.mockResolvedValue(null);
+    mockFetch.mockResolvedValue(
+      jsonResp([
+        {
+          subject: {
+            title: "Build failure",
+            type: "Issue",
+            url: "https://api.github.com/repos/o/r/issues/1",
+          },
+          reason: "subscribed",
+          repository: {
+            full_name: "o/r",
+            html_url: "https://github.com/o/r",
+          },
+          updated_at: "2024-01-02T00:00:00Z",
+        },
+      ]),
+    );
+
+    const result = await checkTrigger(
+      "github_notification",
+      {},
+      { lastPollTimestamp: "2024-01-01T00:00:00Z" },
+      ctx as any,
+    );
+
+    expect(result.events).toEqual([
+      {
+        title: "Build failure",
+        reason: "subscribed",
+        repo: "o/r",
+        type: "Issue",
+        url: "https://github.com/o/r",
+        timestamp: "2024-01-02T00:00:00Z",
+      },
+    ]);
+    expect((ctx as any).host.getSecret).toHaveBeenCalledWith("token");
+    expect(mockHost.getSecret).not.toHaveBeenCalled();
   });
 });
 

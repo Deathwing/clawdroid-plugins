@@ -1,9 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Clawdroid Plugin Manifest",
-  "description": "Manifest schema for Clawdroid plugins. IMPORTANT: use 'clawdroid_plugin', NOT 'version'.",
+  "title": "ClawDroid Plugin Manifest",
+  "description": "Manifest schema for ClawDroid plugins. Use 'clawdroid_plugin' for the manifest format version and 'version' for the plugin's own semver.",
   "type": "object",
-  "required": ["id", "name", "description", "clawdroid_plugin", "type"],
+  "required": ["id", "name", "clawdroid_plugin", "type"],
   "additionalProperties": false,
   "properties": {
     "id": {
@@ -29,21 +29,21 @@
     },
     "category": {
       "type": "string",
-      "description": "Plugin category for catalog browsing, e.g. 'messaging', 'developer', 'productivity', 'social', 'entertainment'"
+      "description": "Plugin category for catalog browsing"
     },
     "icon_url": {
       "type": "string",
       "format": "uri",
-      "description": "URL to a square plugin icon (PNG/WebP, min 64x64). Displayed in the plugin catalog."
+      "description": "URL to a square plugin icon"
     },
     "featured": {
       "type": "boolean",
-      "description": "Whether this plugin is featured in the catalog. Pre-bundled plugins are featured by default."
+      "description": "Whether this plugin is featured in the catalog"
     },
     "clawdroid_plugin": {
       "type": "integer",
       "minimum": 1,
-      "description": "Clawdroid plugin format version. Must be 1. Do NOT use a 'version' field instead."
+      "description": "ClawDroid manifest format version"
     },
     "type": {
       "type": "string",
@@ -53,40 +53,119 @@
     "runtime": {
       "type": "string",
       "enum": ["embedded_js"],
-      "description": "Runtime environment for the plugin"
+      "description": "Runtime environment for JS-backed plugins"
     },
     "entrypoint": {
       "type": "string",
       "description": "Entry-point JS bundle filename",
       "default": "index.js"
     },
+    "bundle_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Bundle download URL for embedded_js plugins installed from a manifest URL"
+    },
+    "integrity": {
+      "type": "object",
+      "description": "Optional bundle integrity metadata",
+      "required": ["sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "type": "string",
+          "description": "Expected SHA-256 of the downloaded JS bundle"
+        }
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Optional capability IDs declared by the plugin",
+      "items": { "type": "string" }
+    },
+    "api": {
+      "type": "object",
+      "description": "HTTP API configuration for manifest-driven model or tool plugins",
+      "required": ["base_url"],
+      "additionalProperties": false,
+      "properties": {
+        "base_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": ["rest", "openai", "anthropic", "mcp"]
+        },
+        "streaming": {
+          "type": "boolean"
+        }
+      }
+    },
+    "models": {
+      "type": "array",
+      "description": "Model definitions exposed by this plugin",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "context_window": { "type": "integer", "minimum": 1 },
+          "pricing": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "input_per_mtok": { "type": "number" },
+              "output_per_mtok": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "description": "Legacy trigger-plugin metadata for pure trigger manifests",
+      "additionalProperties": false,
+      "properties": {
+        "config_schema": {
+          "type": "object"
+        },
+        "variables": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
     "auth": {
       "type": "object",
       "description": "Authentication configuration",
-      "required": ["type", "account_label"],
-      "properties": {
-        "account_label": {
-          "type": "string",
-          "description": "Label shown in the UI for the connected account"
-        },
-        "help_text": {
-          "type": "string",
-          "description": "User-facing setup instructions"
-        }
-      },
       "oneOf": [
         {
-          "title": "API Key auth",
-          "properties": {
-            "type": { "const": "api_key" },
-            "account_label": { "type": "string" },
-            "help_text": { "type": "string" }
-          },
+          "title": "No auth",
           "required": ["type"],
-          "additionalProperties": false
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "none" }
+          }
         },
         {
-          "title": "OAuth 2.0 (PKCE / redirect)",
+          "title": "API Key auth",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "api_key" },
+            "header": { "type": "string" },
+            "prefix": { "type": "string" },
+            "account_label": { "type": "string" },
+            "help_url": { "type": "string", "format": "uri" },
+            "help_text": { "type": "string" }
+          }
+        },
+        {
+          "title": "OAuth 2.0 redirect flow",
+          "required": ["type", "authorize_url", "token_url", "client_id", "scopes"],
+          "additionalProperties": false,
           "properties": {
             "type": { "const": "oauth2" },
             "authorize_url": { "type": "string", "format": "uri" },
@@ -98,33 +177,63 @@
               "items": { "type": "string" }
             },
             "pkce": { "type": "boolean" },
-            "redirect_uri": { "type": "string" },
             "refresh": { "type": "boolean" },
+            "authorize_params": {
+              "type": "object",
+              "additionalProperties": { "type": ["string", "number", "boolean"] }
+            },
+            "redirect_uri": { "type": "string" },
             "account_label": { "type": "string" },
+            "help_url": { "type": "string", "format": "uri" },
             "help_text": { "type": "string" }
-          },
-          "required": ["type", "authorize_url", "token_url", "client_id", "scopes"],
-          "additionalProperties": false
+          }
         },
         {
-          "title": "OAuth 2.0 Device Flow",
+          "title": "OAuth 2.0 device flow",
+          "required": ["type", "client_id", "device_code_url", "poll_url", "user_action_url", "scopes"],
+          "additionalProperties": false,
           "properties": {
             "type": { "const": "oauth2_device" },
             "client_id": { "type": "string" },
             "device_code_url": { "type": "string", "format": "uri" },
+            "device_code_params": {
+              "type": "object",
+              "additionalProperties": true
+            },
             "poll_url": { "type": "string", "format": "uri" },
+            "poll_interval_seconds": { "type": "integer", "minimum": 1 },
             "user_action_url": { "type": "string", "format": "uri" },
             "scopes": {
               "type": "array",
               "items": { "type": "string" }
             },
-            "poll_interval_seconds": { "type": "integer", "minimum": 1 },
             "refresh": { "type": "boolean" },
             "account_label": { "type": "string" },
+            "help_url": { "type": "string", "format": "uri" },
             "help_text": { "type": "string" }
-          },
-          "required": ["type", "client_id", "device_code_url", "poll_url", "user_action_url", "scopes"],
-          "additionalProperties": false
+          }
+        },
+        {
+          "title": "Bearer token auth",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "bearer_token" },
+            "account_label": { "type": "string" },
+            "help_url": { "type": "string", "format": "uri" },
+            "help_text": { "type": "string" }
+          }
+        },
+        {
+          "title": "Basic auth",
+          "required": ["type"],
+          "additionalProperties": false,
+          "properties": {
+            "type": { "const": "basic" },
+            "account_label": { "type": "string" },
+            "help_url": { "type": "string", "format": "uri" },
+            "help_text": { "type": "string" }
+          }
         }
       ]
     },
@@ -133,7 +242,7 @@
       "description": "Tool definitions exposed by this plugin",
       "items": {
         "type": "object",
-        "required": ["name", "description", "parameters"],
+        "required": ["name", "description"],
         "additionalProperties": false,
         "properties": {
           "name": {
@@ -143,6 +252,18 @@
           "description": {
             "type": "string",
             "description": "What this tool does"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "HTTP endpoint for manifest-driven tools"
+          },
+          "method": {
+            "type": "string",
+            "description": "HTTP method for manifest-driven tools"
+          },
+          "response_transform": {
+            "type": "string",
+            "description": "Optional transform identifier for manifest-driven tools"
           },
           "parameters": {
             "type": "array",
@@ -173,6 +294,19 @@
                 "id": { "type": "string" },
                 "name": { "type": "string" },
                 "user_prompt": { "type": "string" },
+                "system_prompt": { "type": "string" },
+                "workspace_setup": {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                },
+                "additional_tools": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "required_capabilities": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
                 "expected_output_contains": {
                   "type": "array",
                   "items": { "type": "string" }
@@ -180,7 +314,16 @@
                 "expected_tool_calls": {
                   "type": "object",
                   "additionalProperties": { "type": "integer" }
-                }
+                },
+                "expected_files": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                },
+                "expected_file_contains": {
+                  "type": "object",
+                  "additionalProperties": { "type": "string" }
+                },
+                "timeout_ms": { "type": "integer", "minimum": 1 }
               }
             }
           }
@@ -192,14 +335,20 @@
       "description": "Trigger definitions for event-driven automation",
       "items": {
         "type": "object",
-        "required": ["trigger_type", "name", "description"],
+        "required": ["trigger_type", "name"],
         "additionalProperties": false,
         "properties": {
           "trigger_type": { "type": "string" },
           "name": { "type": "string" },
           "description": { "type": "string" },
           "icon_name": { "type": "string" },
+          "is_one_shot": { "type": "boolean" },
           "poll_interval_seconds": { "type": "integer", "minimum": 1 },
+          "runtime": {
+            "type": "string",
+            "enum": ["node"]
+          },
+          "worker_entrypoint": { "type": "string" },
           "variables": {
             "type": "array",
             "items": { "type": "string" }
@@ -215,18 +364,62 @@
                 "label": { "type": "string" },
                 "type": {
                   "type": "string",
-                  "enum": ["text", "number", "boolean", "select"]
+                  "enum": ["text", "integer", "decimal", "boolean", "dropdown", "day_of_week", "number", "select"]
                 },
                 "placeholder": { "type": "string" },
                 "required": { "type": "boolean" },
+                "default": { "type": "string" },
+                "min": { "type": "integer" },
+                "max": { "type": "integer" },
                 "options": {
                   "type": "array",
-                  "items": { "type": "string" }
+                  "items": {
+                    "oneOf": [
+                      { "type": "string" },
+                      {
+                        "type": "object",
+                        "required": ["value", "label"],
+                        "additionalProperties": false,
+                        "properties": {
+                          "value": { "type": "string" },
+                          "label": { "type": "string" }
+                        }
+                      }
+                    ]
+                  }
                 }
               }
             }
           },
           "prompt_placeholder": { "type": "string" }
+        }
+      }
+    },
+    "notifications": {
+      "type": "array",
+      "description": "Android notification integrations for embedded_js plugins. Each notification entry may be paired with an optional parseNotification(appType, notification) JS export.",
+      "items": {
+        "type": "object",
+        "required": ["app_type", "package_names"],
+        "additionalProperties": false,
+        "properties": {
+          "app_type": {
+            "type": "string",
+            "description": "Stable integration type emitted into ParsedMessage.appType"
+          },
+          "module_type": {
+            "type": "string",
+            "description": "Semantic module category such as 'message' or 'email'"
+          },
+          "package_names": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "type": "string" }
+          },
+          "supports_direct_reply": {
+            "type": "boolean",
+            "description": "Whether Android notification reply actions should be exposed for this integration"
+          }
         }
       }
     }

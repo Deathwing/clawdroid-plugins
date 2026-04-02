@@ -109,7 +109,7 @@ jobs:
             [ -f "${plugin}manifest.json" ] || continue
             echo "Building $name..."
             mkdir -p "${plugin}dist"
-            npm run build:release --prefix "$plugin"
+            npm run build --prefix "$plugin"
           done
           echo "built_plugins=$CHANGED" >> $GITHUB_OUTPUT
 
@@ -128,7 +128,7 @@ jobs:
             # Build if not already built
             if [ ! -f "${plugin}dist/index.js" ]; then
               mkdir -p "${plugin}dist"
-              npm run build:release --prefix "$plugin"
+              npm run build --prefix "$plugin"
             fi
             # Per-plugin zip
             zip -j "release-artifacts/${name}.zip" \

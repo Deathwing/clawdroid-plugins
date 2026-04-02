@@ -1,11 +1,11 @@
 {
   "name": "@clawdroid/plugin-youtube",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "ClawDroid YouTube plugin — TypeScript source",
   "author": "Robert (Deathwing) <deathwing_shadow@hotmail.de>",
   "license": "MIT",
   "scripts": {
-    "build:release": "esbuild src/index.ts --bundle --format=iife --global-name=__plugin --target=es2020 --outfile=./dist/index.js --footer:js=\"var discoverTools=__plugin.discoverTools;var execute=__plugin.execute;\"",
+    "build": "esbuild src/index.ts --bundle --format=iife --global-name=__plugin --target=es2020 --outfile=./dist/index.js --footer:js=\"var discoverTools=__plugin.discoverTools;var execute=__plugin.execute;\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },

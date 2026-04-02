@@ -14,6 +14,7 @@ import { search } from "./tools/search";
 import { listPlaylists, getPlaylist, createPlaylist, addToPlaylist, removeFromPlaylist, updatePlaylistDetails, getPlaylistItems, reorderPlaylistItems, replacePlaylistItems, getPlaylistCoverImage, setPlaylistCoverImage } from "./tools/playlists";
 import { getSavedTracks, saveTracks, removeSavedTracks, getTopItems, getRecentlyPlayed } from "./tools/library";
 import { getTrack, getAlbum, getArtist, getArtistTopTracks, getArtistAlbums, getRelatedArtists, getRecommendations } from "./tools/browse";
+import { errorResult } from "./result";
 
 type ToolInput = Record<string, unknown>;
 
@@ -33,11 +34,14 @@ export async function execute(
 ): Promise<ToolResult | ToolError> {
   const token = await ctx.host.getSecret("token");
   if (!token) {
-    return { error: true, message: "Spotify not connected. Connect in Settings → Plugins → Spotify first." };
+    return errorResult(
+      "Spotify not connected. Connect in Settings → Plugins → Spotify first.",
+      "Spotify connection required",
+    );
   }
 
   try {
-    let result: string;
+    let result: ToolResult;
     switch (toolName) {
       // Player
       case "spotify_get_playback":
@@ -147,10 +151,10 @@ export async function execute(
         result = await getRecentlyPlayed(token, input);
         break;
       default:
-        return { error: true, message: `Unknown Spotify tool: ${toolName}` };
+        return errorResult(`Unknown Spotify tool: ${toolName}`, "Unsupported Spotify tool");
     }
-    return { message: result };
+    return result;
   } catch (err: any) {
-    return { error: true, message: err.message || String(err) };
+    return errorResult(err?.message || String(err), "Spotify request failed");
   }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "@clawdroid/plugin-discord",
+  "version": "1.0.0",
+  "description": "ClawDroid Discord plugin — TypeScript source",
+  "author": "Robert (Deathwing) <deathwing_shadow@hotmail.de>",
+  "license": "MIT",
+  "scripts": {
+    "build": "npm run build:index && npm run build:worker",
+    "build:index": "esbuild src/index.ts --bundle --format=iife --global-name=__plugin --target=es2020 --outfile=./dist/index.js --footer:js=\"var discoverTools=__plugin.discoverTools;var execute=__plugin.execute;var matchEvent=__plugin.matchEvent;var formatLabel=__plugin.formatLabel;var buildConfig=__plugin.buildConfig;var parseNotification=__plugin.parseNotification;\"",
+    "build:worker": "esbuild src/worker.ts --bundle --format=cjs --platform=node --target=node20 --outfile=./dist/worker.js",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

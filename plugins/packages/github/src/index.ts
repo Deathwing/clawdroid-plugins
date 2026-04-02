@@ -20,6 +20,7 @@ import { listPullRequests, getPullRequest } from "./tools/pulls";
 import { listBranches } from "./tools/branches";
 import { getFileContents } from "./tools/files";
 import { searchCode } from "./tools/search";
+import { errorResult } from "./result";
 import { checkNotifications } from "./triggers/notifications";
 
 type ToolInput = Record<string, unknown>;
@@ -40,58 +41,66 @@ export async function execute(
 ): Promise<ToolResult | ToolError> {
   const token = await ctx.host.getSecret("token");
   if (!token) {
-    return { error: true, message: "GitHub not connected. Connect in Settings first." };
+    return errorResult(
+      "GitHub not connected. Connect in Settings first.",
+      "GitHub connection required",
+    );
   }
 
-  let result: string;
-  switch (toolName) {
-    case "github_get_user":
-      result = await getUser(token);
-      break;
-    case "github_list_repos":
-      result = await listRepos(token, input);
-      break;
-    case "github_get_repo":
-      result = await getRepo(token, input);
-      break;
-    case "github_list_issues":
-      result = await listIssues(token, input);
-      break;
-    case "github_get_issue":
-      result = await getIssue(token, input);
-      break;
-    case "github_create_issue":
-      result = await createIssue(token, input);
-      break;
-    case "github_list_pull_requests":
-      result = await listPullRequests(token, input);
-      break;
-    case "github_get_pull_request":
-      result = await getPullRequest(token, input);
-      break;
-    case "github_list_branches":
-      result = await listBranches(token, input);
-      break;
-    case "github_get_file_contents":
-      result = await getFileContents(token, input);
-      break;
-    case "github_search_repos":
-      result = await searchRepos(token, input);
-      break;
-    case "github_search_code":
-      result = await searchCode(token, input);
-      break;
-    case "github_create_repo":
-      result = await createRepo(token, input);
-      break;
-    case "github_delete_repo":
-      result = await deleteRepo(token, input);
-      break;
-    default:
-      return { error: true, message: `Unknown GitHub tool: ${toolName}` };
-  }
+  try {
+    let result: ToolResult;
+    switch (toolName) {
+      case "github_get_user":
+        result = await getUser(token);
+        break;
+      case "github_list_repos":
+        result = await listRepos(token, input);
+        break;
+      case "github_get_repo":
+        result = await getRepo(token, input);
+        break;
+      case "github_list_issues":
+        result = await listIssues(token, input);
+        break;
+      case "github_get_issue":
+        result = await getIssue(token, input);
+        break;
+      case "github_create_issue":
+        result = await createIssue(token, input);
+        break;
+      case "github_list_pull_requests":
+        result = await listPullRequests(token, input);
+        break;
+      case "github_get_pull_request":
+        result = await getPullRequest(token, input);
+        break;
+      case "github_list_branches":
+        result = await listBranches(token, input);
+        break;
+      case "github_get_file_contents":
+        result = await getFileContents(token, input);
+        break;
+      case "github_search_repos":
+        result = await searchRepos(token, input);
+        break;
+      case "github_search_code":
+        result = await searchCode(token, input);
+        break;
+      case "github_create_repo":
+        result = await createRepo(token, input);
+        break;
+      case "github_delete_repo":
+        result = await deleteRepo(token, input);
+        break;
+      default:
+        return errorResult(`Unknown GitHub tool: ${toolName}`, "Unsupported GitHub tool");
+    }
 
-  return { message: result };
+    return result;
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    return errorResult(message, "GitHub request failed");
+  }
 }
 
 // ─── Trigger Exports ────────────────────────────────────────
@@ -100,9 +109,9 @@ export async function checkTrigger(
   triggerType: string,
   config: Record<string, unknown>,
   state: Record<string, unknown>,
-  _ctx: PluginContext,
+  ctx: PluginContext,
 ): Promise<{ events: Record<string, string>[]; state: Record<string, unknown> }> {
-  return checkNotifications(triggerType, config, state) as any;
+  return checkNotifications(triggerType, config, state, ctx) as any;
 }
 
 export function matchEvent(
